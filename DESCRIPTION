@@ -20,3 +20,5 @@ Imports:
     sf,
     stats,
     units
+URL: https://github.com/red-list-ecosystem/RLErestricted
+BugReports: https://github.com/red-list-ecosystem/RLErestricted/issues
