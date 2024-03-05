@@ -18,7 +18,31 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of RLErestricted is to calculate one spatial metric (area of occupancy or AOO) to one polygon describing the distribution of an ecosystem. This information can be used to apply one of the criteria of the IUCN Red List of Ecosystems.
+`RLErestricted` is an R package that contains a set of tools suitable for calculating
+the metrics required for making assessments of ecosystems against the **IUCN Red List of Ecosystems**
+categories and criteria.
+
+## Overview
+
+The `RLErestricted` package was developed to assist users conduct assessments for the
+IUCN Red List of Ecosystems in `R`. Assessments of ecosystems under the IUCN Red List of Ecosystems criteria require calculation of standardised metrics that were developed to objectively assess risk to ecosystem ([Keith et al. 2013](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0062111)).
+
+This package was designed to assist in the calculation of two standard measures of the size of an 
+ecosystems' geographic distribution specified in the IUCN Red List of Ecosystems
+guidelines ([Bland et al. 2017](https://doi.org/10.2305/IUCN.CH.2016.RLE.3.en)).
+These are the Extent of Occurrence (EOO) and Area of Occupancy (AOO). 
+
+In conducting an assessment with this package, we assume that you are familiar 
+with IUCN red listing protocols. In particular, you should consult the IUCN 
+guidelines and follow the recommended steps to ensure consistent application of IUCN criteria ([Bland et al. 2017](https://doi.org/10.2305/IUCN.CH.2016.RLE.3.en)).
+
+We also assume that you are reasonably familiar with the `R` programming
+language, and have some experience in conducting analyses of vector 
+data within the `R` environment using the package `sf` (simple features). 
+
+This is a work in progress and we aim to continually add new functions
+to newer versions of package. Suggestions are welcomed, as are offers for
+collaborative development.
 
 ## Installation
 
@@ -30,6 +54,8 @@ devtools::install_github("red-list-ecosystem/RLErestricted")
 ```
 
 ## Example
+
+The goal of `RLErestricted` is to assist users calculate one spatial metric (area of occupancy or AOO) to a group of polygons describing the distribution of an ecosystem. This information can be used to apply one of the criteria of the IUCN Red List of Ecosystems.
 
 The first step is to create a AOO grid over the extent of the ecosystem:
 
