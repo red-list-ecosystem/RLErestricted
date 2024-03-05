@@ -1,12 +1,22 @@
 Package: RLErestricted
-Title: What the Package Does (One Line, Title Case)
+Title: Calculate spatial metrics for the IUCN Red List of Ecosystem, criterion B
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    person("José R.", "Ferrer-Paris", , "j.ferrer@unsw.edu.au", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-9554-3395"))
+Description: Calculate one spatial metric (Area of occupancy or AOO) for the application of the criterion B of the IUCN Red List of Ecosystems.
+License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Depends: 
+    R (>= 2.10)
+LazyData: true
+Imports: 
+    dplyr,
+    sf,
+    stats,
+    units
