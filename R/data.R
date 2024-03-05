@@ -1,0 +1,18 @@
+#' Tropical glaciers on the Volcanos of Peru and Chile
+#'
+#' Outlines of tropical glaciers that are located in a volcanic region
+#' between Peru and Chile. The original outlines come from the Randolph Glacier
+#' Inventory (version 6.0). The subset of outlines has been selected based on
+#' glacier groups suggested by Sagredo and Lowell (2012) and adopted by
+#' Ferrer-Paris (2004).
+#'
+#' @format ## `glaciers_on_volcanos`
+#' A simple feature collection with 1 feature, 1 field and a geometry:
+#' \describe{
+#'   \item{ecosystem_name}{Name of the ecosystem}
+#'   \item{geom}{Multipoligon geometry projected to CRS: WGS 84 / UTM zone 18S}
+#' }
+#' @source Ferrer-Paris, J.R. (2024). Data for the global RLE assessment of Tropical Glacier Ecosystems. Retrieved from osf.io/432sb
+#' @source RGI Consortium (2017). Randolph Glacier Inventory - A Dataset of Global Glacier Outlines, Version 6. Region 16 Low Latitudes. Boulder, Colorado USA. NSIDC: National Snow and Ice Data Center. doi: https://doi.org/10.7265/4m1f-gd79
+#' @source Sagredo, E.A. & Lowell, T.V. (2012) Climatology of andean glaciers: A framework to understand glacier response to climate change. Global and Planetary Change, 86-87, 101–109.
+"glaciers_on_volcanos"
