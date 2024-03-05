@@ -1,0 +1,53 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# RLErestricted
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The goal of RLErestricted is to calculate one spatial metric (area of occupancy or AOO) to one polygon describing the distribution of an ecosystem. This information can be used to apply one of the criteria of the IUCN Red List of Ecosystems.
+
+## Installation
+
+You can install the development version of RLErestricted from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("red-list-ecosystem/RLErestricted")
+```
+
+## Example
+
+The first step is to create a AOO grid over the extent of the ecosystem:
+
+```{r "create grid"}
+library(RLErestricted)
+
+AOO_grid <- create_AOO_grid(glaciers_on_volcanos)
+```
+
+We can see the results is a grid of cells with information about the area of the ecosystem:
+
+```{r "show grid"}
+AOO_grid
+```
+
+And we can plot this grid:
+
+```{r plot, echo = FALSE}
+plot(AOO_grid['area'])
+```
+
