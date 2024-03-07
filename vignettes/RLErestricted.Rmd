@@ -1,0 +1,144 @@
+---
+title: "RLErestricted"
+author: "José R. Ferrer-Paris"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{RLErestricted}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(RLErestricted)
+```
+
+## Introduction
+In this vignette, we provide an example of using the tools within `RLErestricted` to
+assess the spatial criteria of the [IUCN Red List of
+Ecosystems](https://iucnrle.org/). These criteria assessproperties of the geographic
+distribution size and its exposure to threats (Criterion B). This criterion requires the use of a map
+of ecosystem distributions and qualitative data on threats.
+
+This package relies on function from a couple of existing R packages. Particularly, the spatial data in vector format is read using the `sf` (simple features) package, and we use `units` to express the area calculations in standard units. Our functions make use of functions from the package `dplyr` that is part of the `tidyverse` collection of packages. 
+
+```{r Loading packages, message=FALSE}
+library(sf)
+library(units)
+library(dplyr)
+```
+
+## Importing data
+
+We first import the spatial data we want to analyse. In this vignette, we 
+will be using one example included with the package. 
+We provide a simple dataset in `sf` format that represents the distribution of tropical glacier in the volcanic region between Peru and Chile. The data comes from the [Randolph Glacier Inventory, version 6](). 
+
+```{r Loading our example distributions}
+data("glaciers_on_volcanos")
+glaciers_on_volcanos
+```
+
+## Assessing Criterion B (distribution size)
+
+Criterion B utilizes measures of the geographic distribution of an ecosystem 
+type to identify ecosystems that are at risk from catastrophic disturbances. 
+This is done using two standardized metrics: the extent of occurrence (EOO) and 
+the area of occupancy (AOO) [(Gaston and Fuller, (2009)](https://onlinelibrary.wiley.com/doi/10.1111/j.1365-2664.2008.01596.x/full), 
+[Keith et al., (2013)](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0062111)). 
+
+It must be emphasised that EOO and AOO are not used to estimate the mapped area
+of an ecosystem like the methods we used in Criterion A; they are simply spatial
+metrics that allow us to standardise an estimate of risk due to spatially explicit 
+catastrophes [(Murray et al., (2017)](https://onlinelibrary.wiley.com/doi/10.1111/ddi.12533/abstract). 
+
+Thus, it is critical that these measures are used consistently across all assessments, and
+the use of non-standard measures invalidates comparison against the thresholds. 
+Please refer to the guidelines ([Bland et al., 2016](https://portals.iucn.org/library/sites/library/files/documents/2016-010.pdf))
+for more information on AOO and EOO.
+
+### Subcriterion B1 (calculating EOO)
+
+For subcriterion B1, we will need to calculate the extent of occurrence (EOO) of our
+data. We begin by creating the minimum convex polygon enclosing all occurrences
+of our focal ecosystem.
+
+We can then calculate the area of the EOO polygon.
+
+
+The calculated EOO area for this subset of mangroves in Victoria is ...
+km2. This result can then be combined with additional information required
+under B1(a-c) to assess the ecosystem under subcriteria B1.
+
+### Subcriterion B2 (calculating AOO)
+
+For subcriterion B2, we will need to calculate the number of 10x10 km grid cells
+occupied by our distribution. We begin by creating the appopriate grid cells.
+
+```{r Creating AOO grid, fig.width=7, fig.height=7}
+AOO_grid <- create_AOO_grid(glaciers_on_volcanos)
+print(AOO_grid)
+```
+
+Finally, we can use the created grid to calculate the AOO for our mangroves.
+
+```{r Getting number of AOO grids}
+AOO_summary(AOO_grid)
+```
+
+
+#### Grid uncertainty functions
+Although we have a number for AOO , this may not be the actual minimum
+AOO for this ecosystem, because the placement of the AOO grid will influence this
+number. To take this into account, we have included a few additional functions.
+We will be using `gridUncertainty` in this vignette.
+
+`gridUncertainty` simply moves the AOO grid systematically (with a
+small random movement around fixed points), and continues searching  for a minimum 
+AOO until additional shifts no longer produce improved results. 
+
+The result here shows that the minimum AOO does indeed change in response to 
+where the AOO grid is placed, and that our original AOO value of  is
+not the true minimum AOO. The true minimum AOO (and the one which should be used
+for the assessment) is ....
+
+It is also possible to plot out the grid which was used to produce the minimum 
+AOO result, which can be used to report our final results.
+
+
+
+#### Exporting results
+The results of the above plot from `gridUncertainty` is a shapefile, which can
+be exported with the `raster::shapefile` function.
+
+#### One percent rule
+In addition to the size of the grids used (which will be different for species 
+assessments), there is also an option in the `makeAOOGrid` function to specify 
+whether a minimum of percent of the grid cell area must be occupied before they 
+are included as an AOO grid. Typically, this is only used in very special cases
+for ecosystems with highly skewed distribution of patch sizes ([Bland et al., 2016](https://portals.iucn.org/library/sites/library/files/documents/2016-010.pdf)).
+
+Here, we demonstrate the differences between including, or not including the one
+percent rule:
+
+
+
+There is an additional parameter - `percent` - which adjusts the threshold for
+the AOO grids. Here, we set it to 0.1% to demonstrate its functionalities.
+
+
+
+## 5. Final words
+We have demonstrated in this vignette a typical workflow for assessing an
+example ecosystem under the RLE. The methods outlined here can easily be adapted
+for the Red List of Threatened Species as well, with slight adjustments in the
+parameters (specifically the grid.size parameter for `getAOO` or
+`gridUncertainty`). We hope that with this package, we help ensure a consistent
+implementation for both red lists criteria, minimising any misclassification as
+a result of using different software and methods.
