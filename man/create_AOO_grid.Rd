@@ -23,4 +23,5 @@ Create an Area of Occurrence grid
 }
 \examples{
 AOO_grid <- create_AOO_grid(glaciers_on_volcanos)
+print(AOO_grid)
 }

@@ -10,15 +10,19 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
 Suggests: 
+    knitr,
+    rmarkdown,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Depends: 
     R (>= 2.10)
 LazyData: true
 Imports: 
+    crayon,
     dplyr,
     sf,
     stats,
     units
 URL: https://github.com/red-list-ecosystem/RLErestricted
 BugReports: https://github.com/red-list-ecosystem/RLErestricted/issues
+VignetteBuilder: knitr

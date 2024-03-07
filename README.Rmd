@@ -73,7 +73,7 @@ AOO_grid
 
 And we can plot this grid:
 
-```{r plot, echo = FALSE}
+```{r plot, echo = TRUE}
 plot(AOO_grid['area'])
 ```
 
