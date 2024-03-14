@@ -4,10 +4,12 @@
 \alias{print.EOO_convex_hull}
 \title{Print method for EOO convex hull}
 \usage{
-\method{print}{EOO_convex_hull}(x, ...)
+\method{print}{EOO_convex_hull}(x, output_units = "km2", ...)
 }
 \arguments{
 \item{x}{the EOO convex hull}
+
+\item{output_units}{set units for area output.}
 
 \item{...}{further arguments passed to or from other methods.}
 }

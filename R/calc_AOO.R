@@ -48,31 +48,35 @@ create_AOO_grid <- function(pols, buffsize = 50000, cellsize = 10000, jitter = F
 #' Print method for AOO grid
 #'
 #' @param x the AOO grid object
+#' @param output_units set units for area output.
 #' @param ... further arguments passed to or from other methods.
-#' @importFrom units set_units
+#' @import units
 #' @import sf
 #' @import dplyr
 #' @import crayon
 #' @export
 #'
-print.AOO_grid <- function(x, ...) {
+print.AOO_grid <- function(x, output_units = 'km2', ...) {
   all_cells <- sprintf("%s with a total of %s cells and total extent of:\n",
                        crayon::bold("AOO grid"),
                        nrow(x))
+  total_area <- sum(units::set_units(x$area, output_units, mode = "standard"))
   rule_1p <- sprintf("There are %s cells with small occurrences (<1 %% of cell size)\n",
                      sum(x$prop_area < units::set_units(1, '%')))
   rule_1c <- sprintf("There are %s cells with marginal occurrences (<1 %% of total extent)\n",
                      sum(x$cumm_area < units::set_units(1, '%')))
   cat(all_cells)
-  print(sum(x$area))
+  print(total_area)
   cat(crayon::magenta(rule_1p))
   cat(crayon::magenta(rule_1c))
   NextMethod("print", x)
-
+  invisible(x)
 }
 #' Summarise Area of Occurrence metrics
 #'
-#' @param AOO_grid The AOO grid created by function `create_AOO_grid`
+#' @param object The AOO grid created by function `create_AOO_grid`
+#' @param output_units set units for area output.
+#' @param ... further arguments passed to or from other methods, currently ignored.
 #'
 #' @return A table with a summary of results.
 #' @importFrom units set_units
@@ -82,23 +86,28 @@ print.AOO_grid <- function(x, ...) {
 #'
 #' @examples
 #' AOO_grid <- create_AOO_grid(glaciers_on_volcanos)
-#' AOO_summary(AOO_grid)
-AOO_summary <- function(AOO_grid) {
-    sf::st_drop_geometry(AOO_grid) |>
+#' summary(AOO_grid)
+summary.AOO_grid <- function(object, output_units = 'km2', ...) {
+    zero_units <- units::set_units(0, output_units, mode = "standard")
+    ans <- sf::st_drop_geometry(object) |>
     dplyr::mutate(
       old_1p_rule = .data$prop_area >= units::set_units(1, '%') ,
       new_1p_rule = .data$cumm_area >= units::set_units(1, '%')
     ) |>
     dplyr::summarise(
       AOO = dplyr::n(),
+      total_area = units::set_units(sum(.data$area), output_units, mode = "standard"),
       AOO_1p = sum(.data$old_1p_rule),
       area_1p = (sum(dplyr::if_else(.data$old_1p_rule,
                                     .data$area,
-                                    units::set_units(0, 'm2'))) / sum(.data$area)) %>% units::set_units('%'),
+                                    zero_units)) / .data$total_area) |>
+                                      units::set_units('%'),
       AOO_1c = sum(.data$new_1p_rule),
       area_1c = (sum(dplyr::if_else(.data$new_1p_rule,
                                     .data$area,
-                                    units::set_units(0, 'm2'))) / sum(.data$area)) %>% units::set_units('%')
+                                    zero_units)) / .data$total_area) |>
+                                      units::set_units('%')
     )
+    class(ans) <- c("summary.AOO_grid", "tbl_df", "tbl", "data.frame")
+    return(ans)
 }
-

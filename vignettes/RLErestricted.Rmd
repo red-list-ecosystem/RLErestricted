@@ -89,7 +89,7 @@ print(AOO_grid)
 Finally, we can use the created grid to calculate the AOO for our mangroves.
 
 ```{r Getting number of AOO grids}
-AOO_summary(AOO_grid)
+summary(AOO_grid)
 ```
 
 

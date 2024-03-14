@@ -4,10 +4,12 @@
 \alias{print.AOO_grid}
 \title{Print method for AOO grid}
 \usage{
-\method{print}{AOO_grid}(x, ...)
+\method{print}{AOO_grid}(x, output_units = "km2", ...)
 }
 \arguments{
 \item{x}{the AOO grid object}
+
+\item{output_units}{set units for area output.}
 
 \item{...}{further arguments passed to or from other methods.}
 }

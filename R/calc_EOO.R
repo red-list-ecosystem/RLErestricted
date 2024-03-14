@@ -18,13 +18,14 @@ create_EOO_chull <- function(pols) {
 #' Print method for EOO convex hull
 #'
 #' @param x the EOO convex hull
+#' @param output_units set units for area output.
 #' @param ... further arguments passed to or from other methods.
 #' @import crayon
 #' @export
 #'
-print.EOO_convex_hull <- function(x, ...) {
+print.EOO_convex_hull <- function(x, output_units = 'km2', ...) {
   cat(sprintf("%s with an extent of:\n",
               crayon::bold("EOO convex hull")))
-  print(units::set_units(sf::st_area(x), 'km2'))
+  print(units::set_units(sf::st_area(x), output_units, mode = "standard"))
   NextMethod("print", x)
 }
