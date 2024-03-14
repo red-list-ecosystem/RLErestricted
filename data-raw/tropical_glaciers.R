@@ -85,3 +85,12 @@ tropical_glaciers <- simple_glaciers %>%
 Encoding(st_crs(tropical_glaciers)$wkt) <- "UTF-8"
 
 usethis::use_data(tropical_glaciers, overwrite = TRUE)
+
+for (to_be_removed in dir("data-raw", "RGI2000", full.names = T)) {
+  file.remove(to_be_removed)
+}
+
+for (to_be_removed in dir("data-raw", "gpkg", full.names = T)) {
+  file.remove(to_be_removed)
+}
+
