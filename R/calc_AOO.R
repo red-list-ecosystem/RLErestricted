@@ -111,3 +111,58 @@ summary.AOO_grid <- function(object, output_units = 'km2', ...) {
     class(ans) <- c("summary.AOO_grid", "tbl_df", "tbl", "data.frame")
     return(ans)
 }
+
+#' Threshold for IUCN RLE criterion B2
+#'
+#' @param x The AOO grid created by function `create_AOO_grid`
+#' @param spatial observed or inferred decline
+#' @param environment observed or inferred decline
+#' @param interactions observed or inferred decline
+#' @param threat threatening process
+#' @param locations number of locations
+#' @param ... further arguments passed to or from other methods
+#'
+#' @return B2 categories
+#' @export
+#'
+#' @examples
+#' AOO_grid <- create_AOO_grid(glaciers_on_volcanos)
+#' thresholds(AOO_grid)
+thresholds.AOO_grid <- function(x, spatial = FALSE, environment = FALSE,
+                                interactions = FALSE, threat = FALSE,
+                                locations = NA, ...) {
+  ans <- summary(x)
+  thr_AOO <- c(-Inf, 2, 20, 50, Inf)
+  thr_locations <- c(-Inf, 1, 5, 10, Inf)
+  cats <- c("CR", "EN", "VU", "LC")
+  conditions <- c("a","b","c")
+  declines <- c(spatial, environment, interactions)
+  if (all(declines == FALSE)) {
+    print("No observed or inferred continuing decline in any measure of spatial extent or environmental quality, or increase in disruption of biotic interactions")
+    a <- FALSE
+  } else {
+    conditions[1] <- paste("a",paste(c("i", "ii", "iii")[declines], collapse = "+"), sep = "")
+    a <- TRUE
+  }
+  b <- threat
+  AOO_category <- cut(ans$AOO_1p,breaks=thr_AOO, labels=cats, ordered_result = TRUE)
+  if (is.na(locations)) {
+    c <- FALSE
+  } else {
+    location_category <- cut(locations,breaks=thr_locations, labels=cats, ordered_result = TRUE)
+      c <- (location_category <= AOO_category)
+  }
+  if (AOO_category < "LC") {
+    if (any(c(a,b,c))) {
+      conditions <- paste(conditions[c(a,b,c)], collapse = "; ")
+    } else {
+      AOO_category = "NT"
+      conditions <- "(not met)"
+    }
+  } else {
+    conditions <- NA
+  }
+  res <- tibble(B2 = AOO_category,
+         conditions = conditions)
+  return(res)
+}
