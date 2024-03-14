@@ -4,8 +4,10 @@ author: "José R. Ferrer-Paris"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{RLErestricted}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r, include = FALSE}
@@ -41,8 +43,12 @@ will be using one example included with the package.
 We provide a simple dataset in `sf` format that represents the distribution of tropical glacier in the volcanic region between Peru and Chile. The data comes from the [Randolph Glacier Inventory, version 6](). 
 
 ```{r Loading our example distributions}
-data("glaciers_on_volcanos")
-glaciers_on_volcanos
+data("tropical_glaciers")
+tropical_glaciers
+glaciers_on_volcanos <- tropical_glaciers |> filter(ecosystem_name %in% "Volcanos de Peru y Chile")
+table(glaciers_on_volcanos$utm_zone)
+glaciers_on_volcanos <- st_transform(glaciers_on_volcanos, crs = 32719)
+
 ```
 
 ## Assessing Criterion B (distribution size)

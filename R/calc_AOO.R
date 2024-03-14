@@ -15,7 +15,19 @@
 #' @examples
 #' AOO_grid <- create_AOO_grid(glaciers_on_volcanos)
 #' print(AOO_grid)
-create_AOO_grid <- function(pols, buffsize = 50000, cellsize = 10000, jitter = FALSE) {
+create_AOO_grid <- function(pols, buffsize = 50000, cellsize = 10000, jitter = FALSE, names_from = NA) {
+
+  names_from <- coalesce(names_from, "ecosystem_name")
+  if (any(colnames(pols) %in% names_from)) {
+    ecosystem_names <- pols %>% pull(!!names_from)
+  } else {
+    pols <- pols |> dplyr::mutate(ecosystem_name = "unnamed ecosystem type")
+  }
+
+  if (n_distinct(ecosystem_names)>1) {
+    print("multiple ecosystem names given, do you want to combine all of them?")
+  }
+
   bf.pols <- pols |> sf::st_buffer(buffsize) |> sf::st_union()
   raw.grid <- sf::st_make_grid(bf.pols, cellsize = cellsize)
 
@@ -30,18 +42,24 @@ create_AOO_grid <- function(pols, buffsize = 50000, cellsize = 10000, jitter = F
     pols <- qry
   }
   data.intersect <-
-    sf::st_intersection(pols, grid) |>
-    dplyr::mutate(area = sf::st_area(.data$geom)) |> # add in areas in m2
+    sf::st_intersection(pols, grid)
+  sf_column_name <- attr(data.intersect, "sf_column")
+  data.intersect <-  data.intersect |>
+    dplyr::mutate(area = sf::st_area(.data[[sf_column_name]])) |> # add in areas in m2
     dplyr::as_tibble() |>
-    dplyr::group_by(.data$layer) |> # for each cell, get area
+    dplyr::group_by(.data[[!!names_from]],.data$layer) |> # for each cell, get area
     dplyr::summarise(area = sum(.data$area), .groups="drop")
 
   out.grid <-
     grid |>
-    dplyr::inner_join(data.intersect, by = 'layer') |>
+    dplyr::inner_join(data.intersect, by = 'layer')
+  sf_column_name <- attr(out.grid, "sf_column")
+  out.grid <- out.grid |>
     dplyr::arrange(.data$area) |>
-    dplyr::mutate(prop_area = (.data$area/sf::st_area(.data$geoms)) |> units::set_units("%"),
-           cumm_area = units::set_units(cumsum(.data$area)/sum(.data$area),'%'))
+    dplyr::mutate(
+      prop_area = (.data$area / sf::st_area(.data[[sf_column_name]])) |>
+        units::set_units("%"),
+      cumm_area = units::set_units(cumsum(.data$area)/sum(.data$area),'%'))
   class(out.grid) <- c("AOO_grid", class(pols))
   return(out.grid)
 }
@@ -76,6 +94,7 @@ print.AOO_grid <- function(x, output_units = 'km2', ...) {
 #'
 #' @param object The AOO grid created by function `create_AOO_grid`
 #' @param output_units set units for area output.
+#' @param conditions List with information
 #' @param ... further arguments passed to or from other methods, currently ignored.
 #'
 #' @return A table with a summary of results.
@@ -87,7 +106,7 @@ print.AOO_grid <- function(x, output_units = 'km2', ...) {
 #' @examples
 #' AOO_grid <- create_AOO_grid(glaciers_on_volcanos)
 #' summary(AOO_grid)
-summary.AOO_grid <- function(object, output_units = 'km2', ...) {
+summary.AOO_grid <- function(object, output_units = 'km2', conditions = list(), ...) {
     zero_units <- units::set_units(0, output_units, mode = "standard")
     ans <- sf::st_drop_geometry(object) |>
     dplyr::mutate(
@@ -115,12 +134,8 @@ summary.AOO_grid <- function(object, output_units = 'km2', ...) {
 #' Threshold for IUCN RLE criterion B2
 #'
 #' @param x The AOO grid created by function `create_AOO_grid`
-#' @param spatial observed or inferred decline
-#' @param environment observed or inferred decline
-#' @param interactions observed or inferred decline
-#' @param threat threatening process
-#' @param locations number of locations
-#' @param ... further arguments passed to or from other methods
+#' @param conditions list of conditions considered when applying the criterion
+#' @param ... further arguments passed to B_conditions() if conditions is not provided
 #'
 #' @return B2 categories
 #' @export
@@ -128,24 +143,37 @@ summary.AOO_grid <- function(object, output_units = 'km2', ...) {
 #' @examples
 #' AOO_grid <- create_AOO_grid(glaciers_on_volcanos)
 #' thresholds(AOO_grid)
-thresholds.AOO_grid <- function(x, spatial = FALSE, environment = FALSE,
-                                interactions = FALSE, threat = FALSE,
-                                locations = NA, ...) {
+thresholds.AOO_grid <- function(x, rule = c("marginal", "small", "all"), conditions = NA, ...) {
   ans <- summary(x)
+  if (is.na(conditions)) {
+    conditions <- B_conditions(...)
+  }
+  AOO_rule <-
+    switch(first(rule),
+         marginal = {"AOO_1c"},
+         small = {"AOO_1p"},
+         all = {"AOO"})
+  note <-
+    switch(first(rule),
+           marginal = {"AOO excludes marginal occurrences (<1% of total extent)"},
+           small = {"AOO excludes small occurrences (<1% of cell area)"},
+           all = {"AOO includes all occurrences"})
+  AOO_val <- pull(ans,!!AOO_rule)
   thr_AOO <- c(-Inf, 2, 20, 50, Inf)
   thr_locations <- c(-Inf, 1, 5, 10, Inf)
   cats <- c("CR", "EN", "VU", "LC")
-  conditions <- c("a","b","c")
-  declines <- c(spatial, environment, interactions)
+  condition_litterals <- c("a","b","c")
+  declines <- with(conditions,c(spatial, environment, interactions))
   if (all(declines == FALSE)) {
     print("No observed or inferred continuing decline in any measure of spatial extent or environmental quality, or increase in disruption of biotic interactions")
     a <- FALSE
   } else {
-    conditions[1] <- paste("a",paste(c("i", "ii", "iii")[declines], collapse = "+"), sep = "")
+    condition_litterals[1] <- paste("a",paste(c("i", "ii", "iii")[declines], collapse = "+"), sep = "")
     a <- TRUE
   }
-  b <- threat
-  AOO_category <- cut(ans$AOO_1p,breaks=thr_AOO, labels=cats, ordered_result = TRUE)
+  b <- with(conditions,c(threats))
+  locations <- with(conditions, locations)
+  AOO_category <- cut(AOO_val,breaks=thr_AOO, labels=cats, ordered_result = TRUE)
   if (is.na(locations)) {
     c <- FALSE
   } else {
@@ -154,15 +182,29 @@ thresholds.AOO_grid <- function(x, spatial = FALSE, environment = FALSE,
   }
   if (AOO_category < "LC") {
     if (any(c(a,b,c))) {
-      conditions <- paste(conditions[c(a,b,c)], collapse = "; ")
+      condition_litterals <- paste(condition_litterals[c(a,b,c)], collapse = "; ")
     } else {
       AOO_category = "NT"
-      conditions <- "(not met)"
+      condition_litterals <- "(not met)"
     }
   } else {
-    conditions <- NA
+    if (AOO_val < thr_AOO[4]*1.1) {
+     if (any(c(a,b,c))) {
+        AOO_category = "NT"
+        condition_litterals <- paste(condition_litterals[c(a,b,c)], collapse = "; ")
+     } else {
+       condition_litterals <- NA
+      }
+    } else {
+      condition_litterals <- NA
+    }
   }
-  res <- tibble(B2 = AOO_category,
-         conditions = conditions)
+  res <- tibble(metric = "AOO",
+                value = AOO_val,
+                criterion = "B2",
+                category = AOO_category,
+                conditions = condition_litterals,
+                note = note)
   return(res)
 }
+

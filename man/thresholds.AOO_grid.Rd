@@ -4,30 +4,14 @@
 \alias{thresholds.AOO_grid}
 \title{Threshold for IUCN RLE criterion B2}
 \usage{
-\method{thresholds}{AOO_grid}(
-  x,
-  spatial = FALSE,
-  environment = FALSE,
-  interactions = FALSE,
-  threat = FALSE,
-  locations = NA,
-  ...
-)
+\method{thresholds}{AOO_grid}(x, rule = c("marginal", "small", "all"), conditions = NA, ...)
 }
 \arguments{
 \item{x}{The AOO grid created by function \code{create_AOO_grid}}
 
-\item{spatial}{observed or inferred decline}
+\item{conditions}{list of conditions considered when applying the criterion}
 
-\item{environment}{observed or inferred decline}
-
-\item{interactions}{observed or inferred decline}
-
-\item{threat}{threatening process}
-
-\item{locations}{number of locations}
-
-\item{...}{further arguments passed to or from other methods}
+\item{...}{further arguments passed to B_conditions() if conditions is not provided}
 }
 \value{
 B2 categories

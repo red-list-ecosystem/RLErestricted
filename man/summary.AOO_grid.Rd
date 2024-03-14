@@ -4,12 +4,14 @@
 \alias{summary.AOO_grid}
 \title{Summarise Area of Occurrence metrics}
 \usage{
-\method{summary}{AOO_grid}(object, output_units = "km2", ...)
+\method{summary}{AOO_grid}(object, output_units = "km2", conditions = list(), ...)
 }
 \arguments{
 \item{object}{The AOO grid created by function \code{create_AOO_grid}}
 
 \item{output_units}{set units for area output.}
+
+\item{conditions}{List with information}
 
 \item{...}{further arguments passed to or from other methods, currently ignored.}
 }

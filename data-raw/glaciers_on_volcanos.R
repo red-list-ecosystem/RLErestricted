@@ -1,19 +1,87 @@
 ## code to prepare `glaciers_on_volcanos` dataset goes here
 
+## Download data from NSIDC using earthdata
+## echo 'machine urs.earthdata.nasa.gov login <uid> password <password>' >> ~/.netrc
+## chmod 0600 ~/.netrc
+## cd data-raw
+## curl -b ~/.urs_cookies -c ~/.urs_cookies -L -n -O https://daacdata.apps.nsidc.org/pub/DATASETS/nsidc0770_rgi_v7/regional_files/RGI2000-v7.0-C/RGI2000-v7.0-C-16_low_latitudes.zip
+
 library(sf)
 library(dplyr)
-if (!file.exists("data-raw/rgi-Volcanos_de_Peru_y_Chile-proj1.gpkg")) {
+if (!file.exists("data-raw/trop-glacier-groups-labelled.gpkg")) {
   library(osfr) # need to have a valid OSF_PAT entry in .Renviron
   osfcode <- "432sb"
   osf_project <- osf_retrieve_node(sprintf("https://osf.io/%s", osfcode))
-  osf_all_files <- osf_ls_files(osf_project, "group-polygons", n_max=100)
-  osf_target_file <- filter(osf_all_files, grepl("rgi-Volcanos_de_Peru_y_Chile",name))
+  osf_target_files <- osf_ls_files(osf_project, pattern = "gpkg", n_max=10)
   osf_download(
-    osf_target_file,
+    osf_target_files,
     path = "data-raw/")
 }
 
-glaciers_on_volcanos <- read_sf("data-raw/rgi-Volcanos_de_Peru_y_Chile-proj1.gpkg") %>% transmute(ecosystem_name = "Tropical glaciers on the Volcanos of Peru and Chile")
-Encoding(st_crs(glaciers_on_volcanos)$wkt) <- "UTF-8"
+if (!file.exists("data-raw/RGI2000-v7.0-C-16_low_latitudes.zip")) {
+  download.file(
+    url = "https://daacdata.apps.nsidc.org/pub/DATASETS/nsidc0770_rgi_v7/regional_files/RGI2000-v7.0-C/RGI2000-v7.0-C-16_low_latitudes.zip",
+    destfile = "data-raw/RGI2000-v7.0-C-16_low_latitudes.zip",
+    method = "curl",
+    extra = "-b ~/.urs_cookies -c ~/.urs_cookies -L -n"
+  )
+} else {
+  unzip("data-raw/RGI2000-v7.0-C-16_low_latitudes.zip", exdir = "data-raw")
+  file.remove("data-raw/RGI2000-v7.0-C-16_low_latitudes.zip")
+}
 
-usethis::use_data(glaciers_on_volcanos, overwrite = TRUE)
+
+
+## make valid and drop z dimension to reduce size of data
+rgi7_glaciers <- read_sf("data-raw/RGI2000-v7.0-C-16_low_latitudes.shp") %>%
+  st_make_valid() %>%
+  st_zm(drop = TRUE, what = "ZM")
+
+calculated_area <- st_area(rgi7_glaciers) %>% set_units('km2')
+## exact match
+cor(rgi7_glaciers$area_km2, calculated_area)
+
+## select a dTolerance value (in meters) that does not distort areas too much
+simple_glaciers <- rgi7_glaciers %>% st_simplify(dTolerance = 100)
+calculated_area <- st_area(simple_glaciers) %>% set_units('km2') %>% drop_units()
+## still >0.99
+cor(rgi7_glaciers$area_km2, calculated_area)
+## but several with zero area
+plot(rgi7_glaciers$area_km2, calculated_area, log="xy")
+
+exclude_groups <- c("Temperate Glacier Ecosystems", "Norte de Argentina", "Famatina", "Zona Volcanica Central")
+glaciers_groups <- read_sf("data-raw/trop-glacier-groups-labelled.gpkg") %>%
+  filter(!group_name %in% exclude_groups)  %>%
+  select(group_name)
+
+# st_agr
+grouped_simple <- st_contains(glaciers_groups, simple_glaciers)
+grouped_glaciers <- st_contains(glaciers_groups, rgi7_glaciers)
+
+glaciers_groups <- glaciers_groups %>% mutate(n_simple = lengths(grouped_simple),
+                           n_orig = lengths(grouped_glaciers))
+
+glaciers_groups %>% st_drop_geometry() %>% group_by(group_name) %>% summarise(sum(n_simple), sum(n_orig))
+
+plot(st_geometry(glaciers_groups[2,]))
+plot(st_geometry(simple_glaciers), add = TRUE, border=2)
+plot(st_geometry(rgi7_glaciers), add = TRUE)
+
+groups <- glaciers_groups %>% distinct(group_name) %>% pull
+
+simple_glaciers <- simple_glaciers %>% mutate(group_name = "ungrouped")
+for (gg in groups) {
+  lst <- unlist(grouped_simple[glaciers_groups$group_name %in% gg])
+  simple_glaciers <- simple_glaciers %>% mutate(group_name = replace(group_name,lst,gg))
+}
+simple_glaciers %>% filter(group_name %in% "ungrouped") %>% st_area
+
+tropical_glaciers <- simple_glaciers %>%
+  filter(!group_name %in% "ungrouped") %>%
+  select(rgi_id, ecosystem_name = group_name, utm_zone) %>%
+  st_make_valid()
+
+# try to avoid problems with check()
+Encoding(st_crs(tropical_glaciers)$wkt) <- "UTF-8"
+
+usethis::use_data(tropical_glaciers, overwrite = TRUE)
