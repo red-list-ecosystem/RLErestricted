@@ -61,6 +61,7 @@ create_AOO_grid <- function(pols, buffsize = 50000, cellsize = 10000, jitter = F
         units::set_units("%"),
       cumm_area = units::set_units(cumsum(.data$area)/sum(.data$area),'%'))
   class(out.grid) <- c("AOO_grid", class(pols))
+  attr(out.grid, "ecosystem name column") <- names_from
   return(out.grid)
 }
 #' Print method for AOO grid
@@ -75,9 +76,20 @@ create_AOO_grid <- function(pols, buffsize = 50000, cellsize = 10000, jitter = F
 #' @export
 #'
 print.AOO_grid <- function(x, output_units = 'km2', ...) {
-  all_cells <- sprintf("%s with a total of %s cells and total extent of:\n",
-                       crayon::bold("AOO grid"),
-                       nrow(x))
+  names_from <- attr(x,"ecosystem name column")
+  ecosystem_names <- unique(dplyr::pull(x, !!names_from))
+  if (length(ecosystem_names)>1) {
+    all_cells <- sprintf("%s for %s distinct ecosystems with a total of %s cells and total extent of:\n",
+                         crayon::bold("AOO grid"),
+                         length(ecosystem_names),
+                         nrow(x))
+
+  } else {
+    all_cells <- sprintf("%s for %s with a total of %s cells and total extent of:\n",
+                         crayon::bold("AOO grid"),
+                         crayon::bold(ecosystem_names),
+                         nrow(x))
+  }
   total_area <- sum(units::set_units(x$area, output_units, mode = "standard"))
   rule_1p <- sprintf("There are %s cells with small occurrences (<1 %% of cell size)\n",
                      sum(x$prop_area < units::set_units(1, '%')))
@@ -107,15 +119,17 @@ print.AOO_grid <- function(x, output_units = 'km2', ...) {
 #' AOO_grid <- create_AOO_grid(glaciers_on_volcanos)
 #' summary(AOO_grid)
 summary.AOO_grid <- function(object, output_units = 'km2', conditions = list(), ...) {
+  names_from <- attr(object,"ecosystem name column")
     zero_units <- units::set_units(0, output_units, mode = "standard")
     ans <- sf::st_drop_geometry(object) |>
-    dplyr::mutate(
-      old_1p_rule = .data$prop_area >= units::set_units(1, '%') ,
-      new_1p_rule = .data$cumm_area >= units::set_units(1, '%')
-    ) |>
-    dplyr::summarise(
-      AOO = dplyr::n(),
-      total_area = units::set_units(sum(.data$area), output_units, mode = "standard"),
+      dplyr::mutate(
+        old_1p_rule = .data$prop_area >= units::set_units(1, '%') ,
+        new_1p_rule = .data$cumm_area >= units::set_units(1, '%')
+      ) |>
+      dplyr::group_by(dplyr::pick(names_from)) |>
+      dplyr::summarise(
+        AOO = dplyr::n(),
+        total_area = units::set_units(sum(.data$area), output_units, mode = "standard"),
       AOO_1p = sum(.data$old_1p_rule),
       area_1p = (sum(dplyr::if_else(.data$old_1p_rule,
                                     .data$area,
@@ -125,7 +139,8 @@ summary.AOO_grid <- function(object, output_units = 'km2', conditions = list(), 
       area_1c = (sum(dplyr::if_else(.data$new_1p_rule,
                                     .data$area,
                                     zero_units)) / .data$total_area) |>
-                                      units::set_units('%')
+                                      units::set_units('%'),
+      .groups = "drop"
     )
     class(ans) <- c("summary.AOO_grid", "tbl_df", "tbl", "data.frame")
     return(ans)
@@ -136,6 +151,7 @@ summary.AOO_grid <- function(object, output_units = 'km2', conditions = list(), 
 #' @param x The AOO grid created by function `create_AOO_grid`
 #' @param conditions list of conditions considered when applying the criterion
 #' @param ... further arguments passed to B_conditions() if conditions is not provided
+#' @param useNT logical, should we apply rules for the Near Threatened category? TRUE by default, if FALSE the category Least Concern will be used, but a note will be added to the output. See details.
 #'
 #' @return B2 categories
 #' @export
@@ -143,9 +159,23 @@ summary.AOO_grid <- function(object, output_units = 'km2', conditions = list(), 
 #' @examples
 #' AOO_grid <- create_AOO_grid(glaciers_on_volcanos)
 #' thresholds(AOO_grid)
-thresholds.AOO_grid <- function(x, rule = c("marginal", "small", "all"), conditions = NA, ...) {
-  ans <- summary(x)
-  if (is.na(conditions)) {
+thresholds.AOO_grid <- function(x, ecosystem_name = NA, rule = c("marginal", "small", "all"),
+                                conditions = NULL, useNT = TRUE, ...) {
+  names_from <- attr(x,"ecosystem name column")
+  if (is.na(ecosystem_name)) {
+    ans <- summary(x)
+    if (nrow(ans)>1) {
+      message("Multiple ecosystem types present in grid, but no name has been selected. Will apply the threshold to the first ecosystem type and ignore the rest")
+      ans <- dplyr::slice(ans,1)
+    } else {
+      ecosystem_name <- pull(ans, !!names_from)
+      message(sprintf("No ecosystem name has been selected. Will apply the threshold to %s.",
+                      crayon::bgBlue(crayon::white(ecosystem_name))))
+    }
+  } else {
+    ans <- summary(x) |> dplyr::filter(if_any(names_from), ~ . %in% ecosystem_name)
+  }
+  if (is.null(conditions)) {
     conditions <- B_conditions(...)
   }
   AOO_rule <-
@@ -158,53 +188,99 @@ thresholds.AOO_grid <- function(x, rule = c("marginal", "small", "all"), conditi
            marginal = {"AOO excludes marginal occurrences (<1% of total extent)"},
            small = {"AOO excludes small occurrences (<1% of cell area)"},
            all = {"AOO includes all occurrences"})
-  AOO_val <- pull(ans,!!AOO_rule)
+  rationale <- c()
+
+  AOO_val <- pull(ans, !!AOO_rule)
   thr_AOO <- c(-Inf, 2, 20, 50, Inf)
   thr_locations <- c(-Inf, 1, 5, 10, Inf)
   cats <- c("CR", "EN", "VU", "LC")
   condition_litterals <- c("a","b","c")
   declines <- with(conditions,c(spatial, environment, interactions))
   if (all(declines == FALSE)) {
-    print("No observed or inferred continuing decline in any measure of spatial extent or environmental quality, or increase in disruption of biotic interactions")
+    message("No observed or inferred continuing decline in any measure of spatial extent or environmental quality, or increase in disruption of biotic interactions")
     a <- FALSE
   } else {
     condition_litterals[1] <- paste("a",paste(c("i", "ii", "iii")[declines], collapse = "+"), sep = "")
     a <- TRUE
+    if (declines[1]) {
+      rationale <- c(rationale,"Observed or inferred continuing decline in measure of extent.")
+      }
+    if (declines[2]) {
+      rationale <- c(rationale,"Observed or inferred continuing decline in measure of environmental quality.")
+                     }
+    if (declines[3]) {
+      rationale <- c(rationale,"Observed or inferred continuing increase in measure of disruption of biotic interactions.")
+      }
   }
-  b <- with(conditions,c(threats))
+  threats <- with(conditions,c(threats))
+  if (!threats) {
+    message("No observed threatening process")
+    b <- FALSE
+  } else {
+    b <- TRUE
+    rationale <- c(rationale,"Threatening processes.")
+  }
   locations <- with(conditions, locations)
+
   AOO_category <- cut(AOO_val,breaks=thr_AOO, labels=cats, ordered_result = TRUE)
   if (is.na(locations)) {
+    message("No threat defined locations are given")
     c <- FALSE
   } else {
     location_category <- cut(locations,breaks=thr_locations, labels=cats, ordered_result = TRUE)
       c <- (location_category <= AOO_category)
+      rationale <- c(rationale,sprintf("Ecosystem type present at %s threat defined locations.", locations))
   }
   if (AOO_category < "LC") {
     if (any(c(a,b,c))) {
       condition_litterals <- paste(condition_litterals[c(a,b,c)], collapse = "; ")
+      rationale <- c( sprintf("AOO metric below thresholds for the %s category, and following conditions met.",
+                              AOO_category ),rationale)
     } else {
-      AOO_category = "NT"
+      if (useNT) {
+        AOO_category <- "NT"
+      } else {
+        AOO_category <- "LC"
+        note <- c(note, "Could be considered Near Threatened.")
+      }
+      rationale <- c(rationale, "AOO metric below thresholds for threatened categories, but no evidence of continuing declines, threatening processes or number of threat defined locations has been reported.")
       condition_litterals <- "(not met)"
     }
   } else {
     if (AOO_val < thr_AOO[4]*1.1) {
      if (any(c(a,b,c))) {
-        AOO_category = "NT"
-        condition_litterals <- paste(condition_litterals[c(a,b,c)], collapse = "; ")
+       if (useNT) {
+         AOO_category = "NT"
+         condition_litterals <- paste(condition_litterals[c(a,b,c)], collapse = "; ")
+         rationale <- c(rationale, "AOO metric near to the thresholds for endangered categories.")
+       } else {
+         rationale <- c("AOO metric above the thresholds for threatened categories, but some conditions are met.", rationale)
+         note <- c(note, "Could be considered Near Threatened.")
+         condition_litterals <- NA
+       }
+
      } else {
        condition_litterals <- NA
-      }
+       rationale <- c("AOO metric above the thresholds for threatened categories, and no evidence of continuing declines, threatening processes or number of threat defined locations where given.", rationale)
+     }
+
     } else {
-      condition_litterals <- NA
+      condition_litterals <- NULL
+      rationale <- c("AOO metric well above the thresholds for threatened categories.")
     }
   }
-  res <- tibble(metric = "AOO",
+  if (length(rationale) == 0) {
+    rationale <- "Thresholds and conditions not met."
+  }
+  res <- tibble(
+    ecosystem_name = ecosystem_name,
+    metric = "AOO",
                 value = AOO_val,
                 criterion = "B2",
                 category = AOO_category,
                 conditions = condition_litterals,
-                note = note)
+                rationale = paste(rationale, collapse = " "),
+                note = paste(note, collapse = " "))
   return(res)
 }
 

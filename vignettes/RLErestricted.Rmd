@@ -45,9 +45,19 @@ We provide a simple dataset in `sf` format that represents the distribution of t
 ```{r Loading our example distributions}
 data("tropical_glaciers")
 tropical_glaciers
+
+tropical_glaciers |> st_drop_geometry() |> group_by(ecosystem_name) |> summarise(total = n(), .groups = "drop")
+
+
 glaciers_on_volcanos <- tropical_glaciers |> filter(ecosystem_name %in% "Volcanos de Peru y Chile")
-table(glaciers_on_volcanos$utm_zone)
+table(glaciers_on_volcanos$crs_code)
 glaciers_on_volcanos <- st_transform(glaciers_on_volcanos, crs = 32719)
+
+glaciers_Ecu <- tropical_glaciers |> filter(ecosystem_name %in% "Ecuador")
+glaciers_Ecu_utm <- st_transform(glaciers_Ecu, crs = 32717)
+
+glaciers_NP <- tropical_glaciers |> filter(ecosystem_name %in% "Cordilleras Norte de Peru")
+glaciers_NP_utm <- st_transform(glaciers_NP, crs = 32718)
 
 ```
 
@@ -92,11 +102,73 @@ AOO_grid <- create_AOO_grid(glaciers_on_volcanos)
 print(AOO_grid)
 ```
 
-Finally, we can use the created grid to calculate the AOO for our mangroves.
+
+```{r Creating AOO grid, fig.width=7, fig.height=7}
+AOO_Ecu <- create_AOO_grid(glaciers_Ecu_utm)
+print(AOO_Ecu)
+summary(AOO_Ecu)
+evidence_Ecu <- B_conditions(spatial = TRUE, environment = TRUE, threats = TRUE, locations = 6)
+glaciers_Ecu_B2 <- thresholds(AOO_Ecu, conditions = evidence_Ecu, useNT = FALSE)
+```
+
+
+
+```{r Creating AOO grid, fig.width=7, fig.height=7}
+grid_NP <- create_AOO_grid(glaciers_NP_utm)
+print(grid_NP)
+summary(grid_NP)
+evidence_NP <- B_conditions(spatial = TRUE, environment = TRUE, threats = TRUE)
+glaciers_NP_B2 <- thresholds(grid_NP, conditions = evidence_NP, useNT = FALSE)
+```
+
+Finally, we can use the created grid to calculate the AOO for our ecosystem.
 
 ```{r Getting number of AOO grids}
 summary(AOO_grid)
 ```
+
+This ecosystem has a very restricted distribution, it might be endangered.
+
+We can apply the thresholds for the AOO metric and get the category for subcriterion B2.
+
+```{r Getting number of AOO grids}
+glaciers_on_volcanos_B2 <- thresholds(AOO_grid, useNT = FALSE)
+```
+
+The results are given in a convenient tibble format:
+```{r}
+glaciers_on_volcanos_B2
+```
+
+Surprisingly our ecosystem is Least Concern, why? The output includes a rationale that can help us understand the result.
+
+```{r}
+glaciers_on_volcanos_B2$rationale
+```
+
+Indeed, applying the function also give us some messages hinting to the lack of (evidence of) continuing declines or threats. In order to assign categories of threat for subcriterion B2 we need to have some evidence of these declines, threatening processes or the spatial footprint of potential threats. This function is programmed to assume that there is no evidence of any of this, and is the responsibility of the user to confirm whether such evidence is available. 
+
+In order to provide information on threats, there is a little helper function called `B_condition` that collects this information as a list. This list is initially empty:
+
+```{r}
+B_conditions()
+```
+
+For our ecosystem, we have evidence of continuing declines in extent and environmental condition. Climate change is threatening process. We can use some knowledge about these glaciers to try to estimate the number of threat defined locations.  These glaciers are stretched along two mountain ranges in six distinct spatial clusters. Climate change is also likely to affect the lower peaks in this area earlier than those in higher elevations, and glaciers on active volcanos might have higher rates of declines than  those on inactive volcanos or non-volcanic mountains. All things considered there are likely to be more than 10 threat defined locations.
+
+We can translate this into the following input to our function
+
+```{r}
+evidence_VPC <- B_conditions(spatial = TRUE, environment = TRUE, threats = TRUE, locations = 10)
+```
+
+Now we can apply the thresholds 
+```{r Getting number of AOO grids}
+glaciers_VPC_B2_with_evidence <- thresholds(AOO_grid, 
+                                      conditions = evidence_VPC,
+                                        useNT = FALSE)
+```
+
 
 
 #### Grid uncertainty functions
@@ -133,18 +205,29 @@ for ecosystems with highly skewed distribution of patch sizes ([Bland et al., 20
 Here, we demonstrate the differences between including, or not including the one
 percent rule:
 
-
-
 There is an additional parameter - `percent` - which adjusts the threshold for
 the AOO grids. Here, we set it to 0.1% to demonstrate its functionalities.
 
 
-
 ## 5. Final words
 We have demonstrated in this vignette a typical workflow for assessing an
-example ecosystem under the RLE. The methods outlined here can easily be adapted
-for the Red List of Threatened Species as well, with slight adjustments in the
-parameters (specifically the grid.size parameter for `getAOO` or
-`gridUncertainty`). We hope that with this package, we help ensure a consistent
+example ecosystem under the RLE. We hope that with this package, we help ensure a consistent
 implementation for both red lists criteria, minimising any misclassification as
 a result of using different software and methods.
+
+
+Other vignettes:
+- uncertainty in AOO
+- 1% rule, the old and the new...
+- rules for the Near Threatened category
+- rationale for the three subcriteria and all categories
+
+
+```{r}
+library(foreach)
+foreach(j = 1:10, .combine=bind_rows) %do% { 
+  x <- create_AOO_grid(glaciers_NP_utm, jitter=TRUE);
+  summary(x)
+}
+```
+

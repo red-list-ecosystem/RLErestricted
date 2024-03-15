@@ -81,6 +81,33 @@ tropical_glaciers <- simple_glaciers %>%
   select(rgi_id, ecosystem_name = group_name, utm_zone) %>%
   st_make_valid()
 
+st_agr(tropical_glaciers) <- "identity"
+
+tropical_glaciers$utm_zone <- sprintf("%s%s",
+                                      pull(tropical_glaciers,utm_zone),
+                                      ifelse(st_coordinates(st_centroid(tropical_glaciers))[,2]>0, "N", "S"))
+
+tropical_glaciers %>%
+  st_drop_geometry() %>%
+  group_by(ecosystem_name,utm_zone) %>%
+  summarise(n())
+
+# based on this reference: https://docs.up42.com/data/reference/utm
+crs_codes <-
+  c("35N" = 32635,
+    "19N" = 32619,
+    "18N" = 32618,
+    "14N" = 32614,
+    "17S" = 32717,
+    "18S" = 32718,
+    "19S" = 32719,
+    "37S" = 32737,
+    "53S" = 32753)
+
+tropical_glaciers <-
+  tropical_glaciers |>
+    transmute(rgi_id, ecosystem_name, utm_zone, crs_code = crs_codes[utm_zone])
+st_agr(tropical_glaciers) <- "identity"
 # try to avoid problems with check()
 Encoding(st_crs(tropical_glaciers)$wkt) <- "UTF-8"
 
