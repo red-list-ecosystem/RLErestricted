@@ -1,5 +1,6 @@
 bibentry(
   bibtype  = "Misc",
   title    = "RLErestricted, and R package to calculate spatial metrics for the IUCN Red List of Ecosystem, criterion B",
-  author   = "Ferrer-Paris, J.R."
+  author   = "Ferrer-Paris, J.R.",
+  doi = "10.5281/zenodo.10836309"
 )
