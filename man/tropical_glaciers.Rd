@@ -11,6 +11,7 @@ A simple feature collection with 1742 feature, 2 fields and a geometry:
 \describe{
 \item{rgi_id}{Original ID in the RGI 7.0 product}
 \item{ecosystem_name}{Name of the ecosystem}
+\item{utm_zone}{UTM zone suggested for projection}
 \item{geom}{Multipoligon geometry projected to CRS: WGS 84 / UTM zone 18S}
 }
 }

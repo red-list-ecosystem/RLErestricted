@@ -61,6 +61,11 @@ The first step is to create a AOO grid over the extent of the ecosystem:
 
 ```{r "create grid"}
 library(RLErestricted)
+library(sf)
+library(dplyr)
+glaciers_on_volcanos <- tropical_glaciers |>
+    dplyr::filter(ecosystem_name %in% "Volcanos de Peru y Chile") |>
+    sf::st_transform(crs = 32719)
 
 AOO_grid <- create_AOO_grid(glaciers_on_volcanos)
 ```

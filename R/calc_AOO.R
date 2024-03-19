@@ -4,6 +4,7 @@
 #' @param buffsize Size of the buffer in meters.
 #' @param cellsize Cell size in meter.
 #' @param jitter Logical, should we add random displacement?
+#' @param names_from Which column includes the ecosystem names? if missing, will use a generic name
 #'
 #' @return A simple feature of a grid over the input polygons.
 #' @importFrom units set_units
@@ -12,9 +13,6 @@
 #' @import dplyr
 #' @export
 #'
-#' @examples
-#' AOO_grid <- create_AOO_grid(glaciers_on_volcanos)
-#' print(AOO_grid)
 create_AOO_grid <- function(pols, buffsize = 50000, cellsize = 10000, jitter = FALSE, names_from = NA) {
 
   names_from <- coalesce(names_from, "ecosystem_name")
@@ -116,6 +114,10 @@ print.AOO_grid <- function(x, output_units = 'km2', ...) {
 #' @export
 #'
 #' @examples
+#' require(sf)
+#' glaciers_on_volcanos <- tropical_glaciers |>
+#'   dplyr::filter(ecosystem_name %in% "Volcanos de Peru y Chile") |>
+#'   sf::st_transform(crs = 32719)
 #' AOO_grid <- create_AOO_grid(glaciers_on_volcanos)
 #' summary(AOO_grid)
 summary.AOO_grid <- function(object, output_units = 'km2', conditions = list(), ...) {
@@ -149,6 +151,8 @@ summary.AOO_grid <- function(object, output_units = 'km2', conditions = list(), 
 #' Threshold for IUCN RLE criterion B2
 #'
 #' @param x The AOO grid created by function `create_AOO_grid`
+#' @param ecosystem_name Which ecosystem to use? (if multiple ecosystems are present in the grid)
+#' @param rule Which rule to apply. One of `all` occurrences, exclude `marginal` occurrences or exclude `small` occurrences
 #' @param conditions list of conditions considered when applying the criterion
 #' @param ... further arguments passed to B_conditions() if conditions is not provided
 #' @param useNT logical, should we apply rules for the Near Threatened category? TRUE by default, if FALSE the category Least Concern will be used, but a note will be added to the output. See details.
@@ -156,10 +160,7 @@ summary.AOO_grid <- function(object, output_units = 'km2', conditions = list(), 
 #' @return B2 categories
 #' @export
 #'
-#' @examples
-#' AOO_grid <- create_AOO_grid(glaciers_on_volcanos)
-#' thresholds(AOO_grid)
-thresholds.AOO_grid <- function(x, ecosystem_name = NA, rule = c("marginal", "small", "all"),
+thresholds.AOO_grid <- function(x, ecosystem_name = NA, rule = c("all", "marginal", "small"),
                                 conditions = NULL, useNT = TRUE, ...) {
   names_from <- attr(x,"ecosystem name column")
   if (is.na(ecosystem_name)) {

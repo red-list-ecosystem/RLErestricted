@@ -23,12 +23,13 @@ library(RLErestricted)
 
 ## Introduction
 In this vignette, we provide an example of using the tools within `RLErestricted` to
-assess the spatial criteria of the [IUCN Red List of
-Ecosystems](https://iucnrle.org/). These criteria assessproperties of the geographic
-distribution size and its exposure to threats (Criterion B). This criterion requires the use of a map
-of ecosystem distributions and qualitative data on threats.
+assess the spatial criteria of the [IUCN Red List of Ecosystems](https://iucnrle.org/). 
+This criterion assess properties of the geographic distribution size and its exposure 
+to threats (Criterion B). This criterion requires the use of a map of ecosystem 
+distributions and qualitative data on threats.
 
-This package relies on function from a couple of existing R packages. Particularly, the spatial data in vector format is read using the `sf` (simple features) package, and we use `units` to express the area calculations in standard units. Our functions make use of functions from the package `dplyr` that is part of the `tidyverse` collection of packages. 
+This package relies on function from a couple of existing R packages. Particularly, 
+the spatial data in vector format is read using the `sf` (simple features) package, and we use `units` to express the area calculations in standard units. Our functions make use of functions from the package `dplyr` that is part of the `tidyverse` collection of packages. 
 
 ```{r Loading packages, message=FALSE}
 library(sf)
@@ -38,26 +39,41 @@ library(dplyr)
 
 ## Importing data
 
-We first import the spatial data we want to analyse. In this vignette, we 
-will be using one example included with the package. 
-We provide a simple dataset in `sf` format that represents the distribution of tropical glacier in the volcanic region between Peru and Chile. The data comes from the [Randolph Glacier Inventory, version 6](). 
+We first import the spatial data we want to analyse. 
+In this vignette, we will be using one example included with the package. 
 
-```{r Loading our example distributions}
+We provide a simple dataset in `sf` format that represents the distribution of tropical glacier of the world according to the [Randolph Glacier Inventory, version 7](). 
+The spatial polygons have been slightly simplified to reduce size of the object for demonstration purposes.
+
+```{r load data}
 data("tropical_glaciers")
 tropical_glaciers
+```
 
-tropical_glaciers |> st_drop_geometry() |> group_by(ecosystem_name) |> summarise(total = n(), .groups = "drop")
+The dataset is divided in groups that have been proposed for global assessments and identified by the `ecosystem name` column:
 
+```{r ecosystem names}
+tropical_glaciers |> 
+  st_drop_geometry() |> 
+  group_by(ecosystem_name) |> 
+  summarise(total = n(), .groups = "drop")
+```
 
-glaciers_on_volcanos <- tropical_glaciers |> filter(ecosystem_name %in% "Volcanos de Peru y Chile")
-table(glaciers_on_volcanos$crs_code)
-glaciers_on_volcanos <- st_transform(glaciers_on_volcanos, crs = 32719)
+In this first example we want to focus on the volcanic region between Peru and Chile:
+```{r VPC}
+glaciers_VPC <- tropical_glaciers |> 
+  filter(ecosystem_name %in% "Volcanos de Peru y Chile")
+```
 
-glaciers_Ecu <- tropical_glaciers |> filter(ecosystem_name %in% "Ecuador")
-glaciers_Ecu_utm <- st_transform(glaciers_Ecu, crs = 32717)
+The original data is in Latitude Longitude, but we want to use projected coordinates. This information is included in the utm_zone and crs_code columns. We chose to use the CRS of the UTM Zone 19S.
 
-glaciers_NP <- tropical_glaciers |> filter(ecosystem_name %in% "Cordilleras Norte de Peru")
-glaciers_NP_utm <- st_transform(glaciers_NP, crs = 32718)
+```{r Projection}
+
+glaciers_VPC |> 
+  group_by(utm_zone, crs_code) |>
+  summarise(n_pols = n())
+
+glaciers_VPC <- st_transform(glaciers_VPC, crs = 32719)
 
 ```
 
@@ -85,12 +101,13 @@ For subcriterion B1, we will need to calculate the extent of occurrence (EOO) of
 data. We begin by creating the minimum convex polygon enclosing all occurrences
 of our focal ecosystem.
 
+... Code will come here ...
+
 We can then calculate the area of the EOO polygon.
 
+... Code will come here ...
 
-The calculated EOO area for this subset of mangroves in Victoria is ...
-km2. This result can then be combined with additional information required
-under B1(a-c) to assess the ecosystem under subcriteria B1.
+The calculated EOO area for this ecosystem is ... we will combine this information with ... to assess the ecosystem under subcriteria B1.
 
 ### Subcriterion B2 (calculating AOO)
 
@@ -98,63 +115,46 @@ For subcriterion B2, we will need to calculate the number of 10x10 km grid cells
 occupied by our distribution. We begin by creating the appopriate grid cells.
 
 ```{r Creating AOO grid, fig.width=7, fig.height=7}
-AOO_grid <- create_AOO_grid(glaciers_on_volcanos)
-print(AOO_grid)
-```
-
-
-```{r Creating AOO grid, fig.width=7, fig.height=7}
-AOO_Ecu <- create_AOO_grid(glaciers_Ecu_utm)
-print(AOO_Ecu)
-summary(AOO_Ecu)
-evidence_Ecu <- B_conditions(spatial = TRUE, environment = TRUE, threats = TRUE, locations = 6)
-glaciers_Ecu_B2 <- thresholds(AOO_Ecu, conditions = evidence_Ecu, useNT = FALSE)
-```
-
-
-
-```{r Creating AOO grid, fig.width=7, fig.height=7}
-grid_NP <- create_AOO_grid(glaciers_NP_utm)
-print(grid_NP)
-summary(grid_NP)
-evidence_NP <- B_conditions(spatial = TRUE, environment = TRUE, threats = TRUE)
-glaciers_NP_B2 <- thresholds(grid_NP, conditions = evidence_NP, useNT = FALSE)
+grid_VPC <- create_AOO_grid(glaciers_VPC)
+print(grid_VPC)
 ```
 
 Finally, we can use the created grid to calculate the AOO for our ecosystem.
 
 ```{r Getting number of AOO grids}
-summary(AOO_grid)
+summary(grid_VPC)
 ```
 
 This ecosystem has a very restricted distribution, it might be endangered.
 
 We can apply the thresholds for the AOO metric and get the category for subcriterion B2.
 
-```{r Getting number of AOO grids}
-glaciers_on_volcanos_B2 <- thresholds(AOO_grid, useNT = FALSE)
+```{r Apply thresholds}
+B2_VPC <- thresholds(grid_VPC, useNT = FALSE)
 ```
 
 The results are given in a convenient tibble format:
 ```{r}
-glaciers_on_volcanos_B2
+B2_VPC
 ```
 
 Surprisingly our ecosystem is Least Concern, why? The output includes a rationale that can help us understand the result.
 
 ```{r}
-glaciers_on_volcanos_B2$rationale
+B2_VPC$rationale
 ```
 
 Indeed, applying the function also give us some messages hinting to the lack of (evidence of) continuing declines or threats. In order to assign categories of threat for subcriterion B2 we need to have some evidence of these declines, threatening processes or the spatial footprint of potential threats. This function is programmed to assume that there is no evidence of any of this, and is the responsibility of the user to confirm whether such evidence is available. 
 
-In order to provide information on threats, there is a little helper function called `B_condition` that collects this information as a list. This list is initially empty:
+In order to provide information on threats, there is a little helper function called `B_conditions` that collects this information as a list. This list is initially empty:
 
 ```{r}
 B_conditions()
 ```
 
-For our ecosystem, we have evidence of continuing declines in extent and environmental condition. Climate change is threatening process. We can use some knowledge about these glaciers to try to estimate the number of threat defined locations.  These glaciers are stretched along two mountain ranges in six distinct spatial clusters. Climate change is also likely to affect the lower peaks in this area earlier than those in higher elevations, and glaciers on active volcanos might have higher rates of declines than  those on inactive volcanos or non-volcanic mountains. All things considered there are likely to be more than 10 threat defined locations.
+For our ecosystem, we have evidence of continuing declines in extent and environmental condition. Climate change is threatening process. We can use some knowledge about these glaciers to try to estimate the number of threat defined locations.  
+
+These glaciers are stretched along two mountain ranges in six distinct spatial clusters. Climate change is also likely to affect the lower peaks in this area earlier than those in higher elevations, and glaciers on active volcanos might have higher rates of declines than  those on inactive volcanos or non-volcanic mountains. All things considered there are likely to be more than 10 threat defined locations.
 
 We can translate this into the following input to our function
 
@@ -163,15 +163,24 @@ evidence_VPC <- B_conditions(spatial = TRUE, environment = TRUE, threats = TRUE,
 ```
 
 Now we can apply the thresholds 
-```{r Getting number of AOO grids}
-glaciers_VPC_B2_with_evidence <- thresholds(AOO_grid, 
+
+```{r }
+B2_VPC_with_evidence <- thresholds(grid_VPC, 
                                       conditions = evidence_VPC,
                                         useNT = FALSE)
+```
+
+We can now explore this object to see the suggested category and rationale:
+
+```{r}
+B2_VPC_with_evidence
+B2_VPC$rationale
 ```
 
 
 
 #### Grid uncertainty functions
+
 Although we have a number for AOO , this may not be the actual minimum
 AOO for this ecosystem, because the placement of the AOO grid will influence this
 number. To take this into account, we have included a few additional functions.
@@ -189,13 +198,11 @@ for the assessment) is ....
 It is also possible to plot out the grid which was used to produce the minimum 
 AOO result, which can be used to report our final results.
 
+... Code will come here ...
 
-
-#### Exporting results
-The results of the above plot from `gridUncertainty` is a shapefile, which can
-be exported with the `raster::shapefile` function.
 
 #### One percent rule
+
 In addition to the size of the grids used (which will be different for species 
 assessments), there is also an option in the `makeAOOGrid` function to specify 
 whether a minimum of percent of the grid cell area must be occupied before they 
@@ -205,25 +212,25 @@ for ecosystems with highly skewed distribution of patch sizes ([Bland et al., 20
 Here, we demonstrate the differences between including, or not including the one
 percent rule:
 
-There is an additional parameter - `percent` - which adjusts the threshold for
-the AOO grids. Here, we set it to 0.1% to demonstrate its functionalities.
+... Code will come here ...
 
 
 ## 5. Final words
+
 We have demonstrated in this vignette a typical workflow for assessing an
 example ecosystem under the RLE. We hope that with this package, we help ensure a consistent
 implementation for both red lists criteria, minimising any misclassification as
 a result of using different software and methods.
 
 
-Other vignettes:
+## Other vignettes (work in progress):
+
 - uncertainty in AOO
 - 1% rule, the old and the new...
 - rules for the Near Threatened category
 - rationale for the three subcriteria and all categories
 
-
-```{r}
+```{r, eval=FALSE}
 library(foreach)
 foreach(j = 1:10, .combine=bind_rows) %do% { 
   x <- create_AOO_grid(glaciers_NP_utm, jitter=TRUE);
@@ -231,3 +238,32 @@ foreach(j = 1:10, .combine=bind_rows) %do% {
 }
 ```
 
+Examples from Ecuador and North Peru:
+
+```{r, eval=FALSE}
+glaciers_Ecu <- tropical_glaciers |> filter(ecosystem_name %in% "Ecuador")
+glaciers_Ecu_utm <- st_transform(glaciers_Ecu, crs = 32717)
+
+glaciers_NP <- tropical_glaciers |> filter(ecosystem_name %in% "Cordilleras Norte de Peru")
+glaciers_NP_utm <- st_transform(glaciers_NP, crs = 32718)
+
+```
+
+
+
+```{r, eval=FALSE, fig.width=7, fig.height=7}
+AOO_Ecu <- create_AOO_grid(glaciers_Ecu_utm)
+print(AOO_Ecu)
+summary(AOO_Ecu)
+evidence_Ecu <- B_conditions(spatial = TRUE, environment = TRUE, threats = TRUE, locations = 6)
+glaciers_Ecu_B2 <- thresholds(AOO_Ecu, conditions = evidence_Ecu, useNT = FALSE)
+```
+
+
+```{r, eval=FALSE, fig.width=7, fig.height=7}
+grid_NP <- create_AOO_grid(glaciers_NP_utm)
+print(grid_NP)
+summary(grid_NP)
+evidence_NP <- B_conditions(spatial = TRUE, environment = TRUE, threats = TRUE)
+glaciers_NP_B2 <- thresholds(grid_NP, conditions = evidence_NP, useNT = FALSE)
+```

@@ -4,12 +4,25 @@
 \alias{thresholds.AOO_grid}
 \title{Threshold for IUCN RLE criterion B2}
 \usage{
-\method{thresholds}{AOO_grid}(x, rule = c("marginal", "small", "all"), conditions = NA, ...)
+\method{thresholds}{AOO_grid}(
+  x,
+  ecosystem_name = NA,
+  rule = c("all", "marginal", "small"),
+  conditions = NULL,
+  useNT = TRUE,
+  ...
+)
 }
 \arguments{
 \item{x}{The AOO grid created by function \code{create_AOO_grid}}
 
+\item{ecosystem_name}{Which ecosystem to use? (if multiple ecosystems are present in the grid)}
+
+\item{rule}{Which rule to apply. One of \code{all} occurrences, exclude \code{marginal} occurrences or exclude \code{small} occurrences}
+
 \item{conditions}{list of conditions considered when applying the criterion}
+
+\item{useNT}{logical, should we apply rules for the Near Threatened category? TRUE by default, if FALSE the category Least Concern will be used, but a note will be added to the output. See details.}
 
 \item{...}{further arguments passed to B_conditions() if conditions is not provided}
 }
@@ -18,8 +31,4 @@ B2 categories
 }
 \description{
 Threshold for IUCN RLE criterion B2
-}
-\examples{
-AOO_grid <- create_AOO_grid(glaciers_on_volcanos)
-thresholds(AOO_grid)
 }

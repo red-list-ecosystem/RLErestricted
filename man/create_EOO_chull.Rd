@@ -15,7 +15,3 @@ A simple feature of a convex hull over the input polygons.
 \description{
 Create an Extent of Occurrence convex hull
 }
-\examples{
-EOO_chull <- create_EOO_chull(glaciers_on_volcanos)
-print(EOO_chull)
-}

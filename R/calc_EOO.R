@@ -6,9 +6,6 @@
 #' @import sf
 #' @export
 #'
-#' @examples
-#' EOO_chull <- create_EOO_chull(glaciers_on_volcanos)
-#' print(EOO_chull)
 create_EOO_chull <- function(pols) {
   out.chull <- st_convex_hull(pols)
   class(out.chull) <- c("EOO_convex_hull", class(pols))

@@ -4,7 +4,13 @@
 \alias{create_AOO_grid}
 \title{Create an Area of Occurrence grid}
 \usage{
-create_AOO_grid(pols, buffsize = 50000, cellsize = 10000, jitter = FALSE)
+create_AOO_grid(
+  pols,
+  buffsize = 50000,
+  cellsize = 10000,
+  jitter = FALSE,
+  names_from = NA
+)
 }
 \arguments{
 \item{pols}{A simple feature with Polygons (or Multipolygons).}
@@ -14,14 +20,12 @@ create_AOO_grid(pols, buffsize = 50000, cellsize = 10000, jitter = FALSE)
 \item{cellsize}{Cell size in meter.}
 
 \item{jitter}{Logical, should we add random displacement?}
+
+\item{names_from}{Which column includes the ecosystem names? if missing, will use a generic name}
 }
 \value{
 A simple feature of a grid over the input polygons.
 }
 \description{
 Create an Area of Occurrence grid
-}
-\examples{
-AOO_grid <- create_AOO_grid(glaciers_on_volcanos)
-print(AOO_grid)
 }

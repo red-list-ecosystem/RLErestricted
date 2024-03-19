@@ -22,6 +22,10 @@ A table with a summary of results.
 Summarise Area of Occurrence metrics
 }
 \examples{
+require(sf)
+glaciers_on_volcanos <- tropical_glaciers |>
+  dplyr::filter(ecosystem_name \%in\% "Volcanos de Peru y Chile") |>
+  sf::st_transform(crs = 32719)
 AOO_grid <- create_AOO_grid(glaciers_on_volcanos)
 summary(AOO_grid)
 }
