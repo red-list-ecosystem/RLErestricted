@@ -62,7 +62,7 @@ tropical_glaciers |>
 For example, if we are interested in looking at the ecosystem types in Tanzania and Kenya, we can use:
 ```{r GTK}
 glaciers_GTK <- tropical_glaciers |> 
-  filter(ecosystem_name %in% c("Kilimanjaro", "Mount Kenya"))
+  filter(ecosystem_name %in% c("Kilimanjaro", "Mount Kenia"))
 ```
 
 Or, if we want to focus on the volcanic region between Peru and Chile:
@@ -170,7 +170,7 @@ Surprisingly our ecosystem is Least Concern, why? The output includes a rational
 B2_VPC$rationale
 ```
 
-Indeed, applying the function also give us some messages hinting to the lack of (evidence of) continuing declines or threats. In order to assign categories of threat for subcriterion B2 we need to have some evidence of these declines, threatening processes or the spatial footprint of potential threats. This function is programmed to assume that there is no evidence of any of this, and is the responsibility of the user to confirm whether such evidence is available. 
+Indeed, applying the function also give us some messages hinting to the lack of evidence: no continuing declines or threats. In order to assign categories of threat for subcriterion B2 we need to have some evidence of these declines, threatening processes and/or the spatial footprint of potential threats. This function is programmed to assume that there is no evidence of any of this, and is the responsibility of the user to confirm whether such evidence is available. 
 
 In order to provide information on threats, there is a little helper function called `B_conditions` that collects this information as a list. This list is initially empty:
 
@@ -200,7 +200,7 @@ We can now explore this object to see the suggested category and rationale:
 
 ```{r}
 B2_VPC_with_evidence
-B2_VPC$rationale
+B2_VPC_with_evidence$rationale
 ```
 
 

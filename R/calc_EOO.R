@@ -6,6 +6,7 @@
 #'
 #' @return A simple feature object with a convex hull and a regular grid over the input polygons.
 #' @import sf
+#' @import dplyr
 #' @export
 #'
 create_EOO_chull <- function(pols, output_units = 'km2', names_from = NA) {
@@ -30,6 +31,7 @@ create_EOO_chull <- function(pols, output_units = 'km2', names_from = NA) {
 #' @param output_units set units for area output.
 #' @param ... further arguments passed to or from other methods.
 #' @import crayon
+#' @import dplyr
 #' @export
 #'
 print.EOO_convex_hull <- function(x, output_units = 'km2', ...) {
@@ -63,23 +65,28 @@ print.EOO_convex_hull <- function(x, output_units = 'km2', ...) {
 #' @param useNT logical, should we apply rules for the Near Threatened category? TRUE by default, if FALSE the category Least Concern will be used, but a note will be added to the output. See details.
 #'
 #' @return Category of risk of collapse for subcriterion B1
+#' @import dplyr
+#' @import crayon
 #' @export
 #'
 thresholds.EOO_convex_hull <- function(x, ecosystem_name = NA,
                                 conditions = NULL, useNT = TRUE, ...) {
   names_from <- attr(x,"ecosystem name column")
   if (is.na(ecosystem_name)) {
-    ans <- summary(x)
+    ans <- x
     if (nrow(ans)>1) {
-      message("Multiple ecosystem types present in grid, but no name has been selected. Will apply the threshold to the first ecosystem type and ignore the rest")
-      ans <- dplyr::slice(ans,1)
+      selected_type <- dplyr::slice(ans, 1) |> dplyr::pull(!!names_from)
+      message(sprintf("Multiple ecosystem types present in the object, but no name has been selected. Will apply the threshold to the first ecosystem type (%s) and ignore the rest", selected_type))
+      ans <- dplyr::slice(ans, 1)
     } else {
-      ecosystem_name <- pull(ans, !!names_from)
+      selected_type <- pull(ans, !!names_from)
       message(sprintf("No ecosystem name has been selected. Will apply the threshold to %s.",
-                      crayon::bgBlue(crayon::white(ecosystem_name))))
+                      crayon::bgBlue(crayon::white(selected_type))))
     }
   } else {
-    ans <- summary(x) |> dplyr::filter(if_any(names_from), ~ . %in% ecosystem_name)
+    selected_type <- ecosystem_name
+    ans <- dplyr::filter(x, .data[[names_from]] %in% selected_type)
+    stopifnot(nrow(ans) == 1)
   }
   if (is.null(conditions)) {
     conditions <- B_conditions(...)
@@ -88,7 +95,7 @@ thresholds.EOO_convex_hull <- function(x, ecosystem_name = NA,
   rationale <- c()
 
   EOO_val <- pull(ans, .data[["EOO"]])
-  thr_EOO <- c(-Inf, 2, 20, 50, Inf)
+  thr_EOO <- c(-Inf, 2000, 20000, 50000, Inf)
   thr_locations <- c(-Inf, 1, 5, 10, Inf)
   cats <- c("CR", "EN", "VU", "LC")
   condition_litterals <- c("a","b","c")
@@ -170,7 +177,7 @@ thresholds.EOO_convex_hull <- function(x, ecosystem_name = NA,
     rationale <- "Thresholds and conditions not met."
   }
   res <- tibble(
-    ecosystem_name = ecosystem_name,
+    ecosystem_name = selected_type,
     metric = "EOO",
     value = EOO_val,
     criterion = "B2",
