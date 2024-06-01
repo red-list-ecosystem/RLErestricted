@@ -2,7 +2,7 @@
 #'
 #' @param pols A simple feature with Polygons (or Multipolygons).
 #' @param buffsize Size of the buffer in meters.
-#' @param cellsize Cell size in meter.
+#' @param cellsize Cell size in meters.
 #' @param jitter Logical, should we add random displacement?
 #' @param names_from Which column includes the ecosystem names? if missing, will use a generic name
 #'
@@ -157,7 +157,7 @@ summary.AOO_grid <- function(object, output_units = 'km2', conditions = list(), 
 #' @param ... further arguments passed to B_conditions() if conditions is not provided
 #' @param useNT logical, should we apply rules for the Near Threatened category? TRUE by default, if FALSE the category Least Concern will be used, but a note will be added to the output. See details.
 #'
-#' @return B2 categories
+#' @return Category of risk of collapse for subcriterion B2
 #' @export
 #'
 thresholds.AOO_grid <- function(x, ecosystem_name = NA, rule = c("all", "marginal", "small"),

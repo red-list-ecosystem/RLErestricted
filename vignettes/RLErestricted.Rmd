@@ -101,7 +101,10 @@ For subcriterion B1, we will need to calculate the extent of occurrence (EOO) of
 data. We begin by creating the minimum convex polygon enclosing all occurrences
 of our focal ecosystem.
 
-... Code will come here ...
+```{r Creating EOO, fig.width=7, fig.height=7}
+grid_VPC <- create_EOO_chull(glaciers_VPC)
+print(grid_VPC)
+```
 
 We can then calculate the area of the EOO polygon.
 

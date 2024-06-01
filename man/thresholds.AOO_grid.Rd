@@ -27,7 +27,7 @@
 \item{...}{further arguments passed to B_conditions() if conditions is not provided}
 }
 \value{
-B2 categories
+Category of risk of collapse for subcriterion B2
 }
 \description{
 Threshold for IUCN RLE criterion B2

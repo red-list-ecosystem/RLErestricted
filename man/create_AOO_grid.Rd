@@ -17,7 +17,7 @@ create_AOO_grid(
 
 \item{buffsize}{Size of the buffer in meters.}
 
-\item{cellsize}{Cell size in meter.}
+\item{cellsize}{Cell size in meters.}
 
 \item{jitter}{Logical, should we add random displacement?}
 

@@ -1,13 +1,15 @@
 #' Create an Extent of Occurrence convex hull
 #'
 #' @param pols A simple feature with Polygons (or Multipolygons).
+#' @param output_units Set units for area output.
 #'
-#' @return A simple feature of a convex hull over the input polygons.
+#' @return A simple feature object with a convex hull and a regular grid over the input polygons.
 #' @import sf
 #' @export
 #'
-create_EOO_chull <- function(pols) {
+create_EOO_chull <- function(pols, output_units = 'km2') {
   out.chull <- st_convex_hull(pols)
+  out.chull$eco_extent <- units::set_units(sf::st_area(pols), output_units, mode = "standard")
   class(out.chull) <- c("EOO_convex_hull", class(pols))
   return(out.chull)
 }
