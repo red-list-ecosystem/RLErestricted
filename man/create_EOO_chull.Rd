@@ -4,12 +4,14 @@
 \alias{create_EOO_chull}
 \title{Create an Extent of Occurrence convex hull}
 \usage{
-create_EOO_chull(pols, output_units = "km2")
+create_EOO_chull(pols, output_units = "km2", names_from = NA)
 }
 \arguments{
 \item{pols}{A simple feature with Polygons (or Multipolygons).}
 
 \item{output_units}{Set units for area output.}
+
+\item{names_from}{Which column includes the ecosystem names? if missing, will use a generic name}
 }
 \value{
 A simple feature object with a convex hull and a regular grid over the input polygons.

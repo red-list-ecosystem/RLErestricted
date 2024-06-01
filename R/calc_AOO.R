@@ -17,7 +17,7 @@ create_AOO_grid <- function(pols, buffsize = 50000, cellsize = 10000, jitter = F
 
   names_from <- coalesce(names_from, "ecosystem_name")
   if (any(colnames(pols) %in% names_from)) {
-    ecosystem_names <- pols %>% pull(!!names_from)
+    ecosystem_names <- pull(pols, !!names_from)
   } else {
     pols <- pols |> dplyr::mutate(ecosystem_name = "unnamed ecosystem type")
   }

@@ -59,15 +59,32 @@ tropical_glaciers |>
   summarise(total = n(), .groups = "drop")
 ```
 
-In this first example we want to focus on the volcanic region between Peru and Chile:
+For example, if we are interested in looking at the ecosystem types in Tanzania and Kenya, we can use:
+```{r GTK}
+glaciers_GTK <- tropical_glaciers |> 
+  filter(ecosystem_name %in% c("Kilimanjaro", "Mount Kenya"))
+```
+
+Or, if we want to focus on the volcanic region between Peru and Chile:
 ```{r VPC}
 glaciers_VPC <- tropical_glaciers |> 
   filter(ecosystem_name %in% "Volcanos de Peru y Chile")
 ```
 
-The original data is in Latitude Longitude, but we want to use projected coordinates. This information is included in the utm_zone and crs_code columns. We chose to use the CRS of the UTM Zone 19S.
+The original data is in Latitude Longitude, but we want to use projected coordinates. This information is included in the utm_zone and crs_code columns. 
 
-```{r Projection}
+For the first example above there is only one UTM Zone:
+
+```{r Projection GTK}
+glaciers_GTK |> 
+  group_by(utm_zone, crs_code) |>
+  summarise(n_pols = n())
+glaciers_GTK <- st_transform(glaciers_GTK, crs = 32737)
+```
+
+For the second example, there are two possible UTM zones, we chose to use the CRS of the UTM Zone 19S.
+
+```{r Projection VPC}
 
 glaciers_VPC |> 
   group_by(utm_zone, crs_code) |>
@@ -101,14 +118,20 @@ For subcriterion B1, we will need to calculate the extent of occurrence (EOO) of
 data. We begin by creating the minimum convex polygon enclosing all occurrences
 of our focal ecosystem.
 
-```{r Creating EOO, fig.width=7, fig.height=7}
-grid_VPC <- create_EOO_chull(glaciers_VPC)
-print(grid_VPC)
+We can use the function `create_EOO_chull` on our object and it will create one convex hull around each ecosystem type in our dataset. For the glaciers of Tanzania and Kenya, this results in one object with two convex hulls. 
+
+```{r Creating EOO}
+chull_GTK <- create_EOO_chull(glaciers_GTK)
+print(chull_GTK)
 ```
 
-We can then calculate the area of the EOO polygon.
+We can use the function `dplyr::slice` to get the information for the first type:
 
-... Code will come here ...
+```{r print EOO information}
+slice(chull_GTK, 1)
+```
+
+This object includes the area of the ecosystem type and the area of the convex hull (the extent of occurrence or EOO).
 
 The calculated EOO area for this ecosystem is ... we will combine this information with ... to assess the ecosystem under subcriteria B1.
 
