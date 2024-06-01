@@ -95,7 +95,7 @@ thresholds.EOO_convex_hull <- function(x, ecosystem_name = NA,
   rationale <- c()
 
   EOO_val <- pull(ans, .data[["EOO"]])
-  thr_EOO <- c(-Inf, 2000, 20000, 50000, Inf)
+  thr_EOO <- units::set_units(c(-Inf, 2000, 20000, 50000, Inf), 'km2')
   thr_locations <- c(-Inf, 1, 5, 10, Inf)
   cats <- c("CR", "EN", "VU", "LC")
   condition_litterals <- c("a","b","c")
