@@ -18,7 +18,7 @@ create_EOO_chull <- function(pols, output_units = 'km2', names_from = NA) {
     group_by_at(names_from) |>
     summarise()
   out.pols$eco_area <- units::set_units(sf::st_area(out.pols), output_units, mode = "standard")
-  out.chull <- st_convex_hull(out.pols)
+  out.chull <- sf::st_convex_hull(out.pols)
   out.chull$EOO <- units::set_units(sf::st_area(out.chull), output_units, mode = "standard")
   attr(out.chull, "ecosystem name column") <- names_from
   class(out.chull) <- c("EOO_convex_hull", class(pols))

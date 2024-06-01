@@ -2,7 +2,7 @@
 % Please edit documentation in R/calc_AOO.R
 \name{create_AOO_grid}
 \alias{create_AOO_grid}
-\title{Create an Area of Occurrence grid}
+\title{Create an Area of Occurrence grid and include area of overlap}
 \usage{
 create_AOO_grid(
   pols,
@@ -27,5 +27,5 @@ create_AOO_grid(
 A simple feature of a grid over the input polygons.
 }
 \description{
-Create an Area of Occurrence grid
+Create an Area of Occurrence grid and include area of overlap
 }
