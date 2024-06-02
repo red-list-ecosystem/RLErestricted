@@ -1,4 +1,4 @@
-#' Create an Area of Occurrence grid (presence of ecosystem)
+#' Create an Area of Occurrence grid for multiple ecosystems
 #'
 #' @param pols A simple feature with Points, Lines, Polygons or Multipolygons.
 #' @param cellsize Cell size in meters.
@@ -9,7 +9,7 @@
 #' @import dplyr
 #' @export
 #'
-create_AOO_simple_grid <- function(pols, cellsize = 10000, names_from = NA) {
+create_AOO_grid <- function(pols, cellsize = 10000, names_from = NA) {
 
   names_from <- coalesce(names_from, "ecosystem_name")
   if (any(colnames(pols) %in% names_from)) {
@@ -18,10 +18,11 @@ create_AOO_simple_grid <- function(pols, cellsize = 10000, names_from = NA) {
     pols <- pols |> dplyr::mutate(ecosystem_name = "unnamed ecosystem type")
   }
 
-  if (n_distinct(ecosystem_names)>1) {
-    message("multiple ecosystem names given, they will be combined in one output.")
+  if (n_distinct(ecosystem_names) == 1) {
+    if (!any(st_geometry_type(x) %in% c("POINT", "LINESTRING"))) {
+      message("Only one ecosystem name given, consider using `create_AOO_grid` to get more detailed summary.")
+    }
   }
-
   out.pols <- summarise(pols) |> sf::st_convex_hull()
   raw.grid <- sf::st_make_grid(out.pols, cellsize = cellsize)
   grid <- sf::st_sf(layer = 1:length(raw.grid),
@@ -37,11 +38,11 @@ create_AOO_simple_grid <- function(pols, cellsize = 10000, names_from = NA) {
   out.grid <- grid |> dplyr::slice(data.intersect$row.id)
   out.grid[names_from] <- data.intersect[names_from]
   out.grid <- out.grid |> dplyr::select(all_of(c("layer",names_from)))
-  class(out.grid) <- c("AOO_simple_grid", class(pols))
+  class(out.grid) <- c("AOO_grid", class(pols))
   attr(out.grid, "ecosystem name column") <- names_from
   return(out.grid)
 }
-#' Create an Area of Occurrence grid and include area of overlap
+#' Create an Area of Occurrence grid and include area of overlap for a single ecosystem
 #'
 #' @param pols A simple feature with Polygons (or Multipolygons).
 #' @param buffsize Size of the buffer in meters.
