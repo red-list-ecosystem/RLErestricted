@@ -18,7 +18,7 @@ Depends:
     R (>= 2.10)
 LazyData: true
 Imports: 
-    crayon,
+    cli,
     dplyr,
     sf,
     stats,

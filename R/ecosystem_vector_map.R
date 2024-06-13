@@ -62,22 +62,22 @@ sf_as_ecomap <- function(x, names_from = NA, area_from = NA, output_units = 'km2
 #' @import units
 #' @import sf
 #' @import dplyr
-#' @import crayon
+#' @import cli
 #' @export
 #'
 print.ecomap <- function(x, ...) {
   number_ecosystems <- attr(x, "number of ecosystem types")
   if (number_ecosystems>1) {
     msg1 <- sprintf("%s object with %s distinct ecosystems.\n",
-                      crayon::bold("Ecosystem map (ecomap)"),
-                      crayon::bold(length(number_ecosystems)))
+                      cli::style_bold("Ecosystem map (ecomap)"),
+                      cli::style_bold(length(number_ecosystems)))
 
   } else {
     msg1 <- sprintf("%s for %s\n",
-                         crayon::bold("Ecosystem map (ecomap)"),
+                         cli::style_bold("Ecosystem map (ecomap)"),
                          ifelse (is.null(attr(x, "econame")),
                                  "an unnamed ecosystem type",
-                                 crayon::bgCyan(attr(x, "econame"))))
+                                 cli::bg_cyan(attr(x, "econame"))))
   }
   cat(msg1)
 
@@ -85,11 +85,11 @@ print.ecomap <- function(x, ...) {
     area_from <- attr(x, "ecosystem area column")
     msg2 <- sprintf("%s features representing a total ecosystem extent of: ", nrow(x))
     total_area <- dplyr::pull(x, !!area_from) |> sum()
-    cat(crayon::cyan(msg2))
+    cat(cli::col_cyan(msg2))
     print(total_area)
   } else {
     msg2 <- sprintf("%s features with no information on ecosystem extent.", nrow(x))
-    cat(crayon::cyan(msg2))
+    cat(cli::col_cyan(msg2))
   }
   NextMethod("print", x)
   invisible(x)

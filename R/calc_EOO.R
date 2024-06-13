@@ -30,7 +30,7 @@ create_EOO_chull <- function(pols, output_units = 'km2', names_from = NA) {
 #' @param x the EOO convex hull
 #' @param output_units set units for area output.
 #' @param ... further arguments passed to or from other methods.
-#' @import crayon
+#' @import cli
 #' @import dplyr
 #' @export
 #'
@@ -39,18 +39,18 @@ print.EOO_convex_hull <- function(x, output_units = 'km2', ...) {
   ecosystem_names <- unique(dplyr::pull(x, !!names_from))
   if (length(ecosystem_names) == 1) {
     cat(sprintf("The ecosystem %s has an extent of:\n",
-                crayon::cyan(ecosystem_names)
+                cli::col_cyan(ecosystem_names)
     ))
     print(units::set_units(x$eco_area, output_units, mode = "standard"))
     cat(sprintf("And a %s with an area of:\n",
-                crayon::magenta("EOO convex hull")
+                cli::col_magenta("EOO convex hull")
     ))
     print(units::set_units(x$EOO, output_units, mode = "standard"))
   } else {
     msg <- sprintf("This %s object has information for %s distinct ecosystem types.\nUse `base::subset`, `dplyr::filter` or `dplyr::slice` to get details for specific types.",
-                   crayon::bold("EOO convex hull"),
+                   cli::style_bold("EOO convex hull"),
                    nrow(x))
-    message(crayon::cyan(msg))
+    message(cli::col_cyan(msg))
   }
   cat("Details of spatial object below.\n")
   NextMethod("print", x)
@@ -66,7 +66,7 @@ print.EOO_convex_hull <- function(x, output_units = 'km2', ...) {
 #'
 #' @return Category of risk of collapse for subcriterion B1
 #' @import dplyr
-#' @import crayon
+#' @import cli
 #' @export
 #'
 thresholds.EOO_convex_hull <- function(x, ecosystem_name = NA,
@@ -81,7 +81,7 @@ thresholds.EOO_convex_hull <- function(x, ecosystem_name = NA,
     } else {
       selected_type <- pull(ans, !!names_from)
       message(sprintf("No ecosystem name has been selected. Will apply the threshold to %s.",
-                      crayon::bgBlue(crayon::white(selected_type))))
+                      cli::bg_blue(cli::col_white(selected_type))))
     }
   } else {
     selected_type <- ecosystem_name

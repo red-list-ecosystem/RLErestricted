@@ -114,7 +114,7 @@ create_AOO_grid <- function(pols, buffsize = 50000, cellsize = 10000, jitter = F
 #' @import units
 #' @import sf
 #' @import dplyr
-#' @import crayon
+#' @import cli
 #' @export
 #'
 print.AOO_grid <- function(x, output_units = 'km2', ...) {
@@ -122,14 +122,14 @@ print.AOO_grid <- function(x, output_units = 'km2', ...) {
   ecosystem_names <- unique(dplyr::pull(x, !!names_from))
   if (length(ecosystem_names)>1) {
     all_cells <- sprintf("%s for %s distinct ecosystems with a total of %s cells and total extent of:\n",
-                         crayon::bold("AOO grid"),
+                         cli::style_bold("AOO grid"),
                          length(ecosystem_names),
                          nrow(x))
 
   } else {
     all_cells <- sprintf("%s for %s with a total of %s cells and total extent of:\n",
-                         crayon::bold("AOO grid"),
-                         crayon::bold(ecosystem_names),
+                         cli::style_bold("AOO grid"),
+                         cli::style_bold(ecosystem_names),
                          nrow(x))
   }
   total_area <- sum(units::set_units(x$area, output_units, mode = "standard"))
@@ -139,8 +139,8 @@ print.AOO_grid <- function(x, output_units = 'km2', ...) {
                      sum(x$cumm_area < units::set_units(1, '%')))
   cat(all_cells)
   print(total_area)
-  cat(crayon::magenta(rule_1p))
-  cat(crayon::magenta(rule_1c))
+  cat(cli::col_magenta(rule_1p))
+  cat(cli::col_magenta(rule_1c))
   NextMethod("print", x)
   invisible(x)
 }
@@ -202,6 +202,7 @@ summary.AOO_grid <- function(object, output_units = 'km2', conditions = list(), 
 #' @param useNT logical, should we apply rules for the Near Threatened category? TRUE by default, if FALSE the category Least Concern will be used, but a note will be added to the output. See details.
 #'
 #' @return Category of risk of collapse for subcriterion B2
+#' @import cli
 #' @export
 #'
 thresholds.AOO_grid <- function(x, ecosystem_name = NA, rule = c("all", "marginal", "small"),
@@ -214,8 +215,8 @@ thresholds.AOO_grid <- function(x, ecosystem_name = NA, rule = c("all", "margina
       ans <- dplyr::slice(ans,1)
     } else {
       ecosystem_name <- pull(ans, !!names_from)
-      message(sprintf("No ecosystem name has been selected. Will apply the threshold to %s.",
-                      crayon::bgBlue(crayon::white(ecosystem_name))))
+      cli::cli_alert_warning("No ecosystem name has been selected. Will apply the threshold to first type found.")
+      message(cli::bg_blue(cli::col_white(ecosystem_name)))
     }
   } else {
     ans <- summary(x) |> dplyr::filter(if_any(names_from), ~ . %in% ecosystem_name)
@@ -242,7 +243,7 @@ thresholds.AOO_grid <- function(x, ecosystem_name = NA, rule = c("all", "margina
   condition_litterals <- c("a","b","c")
   declines <- with(conditions,c(spatial, environment, interactions))
   if (all(declines == FALSE)) {
-    message("No observed or inferred continuing decline in any measure of spatial extent or environmental quality, or increase in disruption of biotic interactions")
+    cli::cli_alert_danger("No observed or inferred continuing decline in any measure of spatial extent or environmental quality, or increase in disruption of biotic interactions")
     a <- FALSE
   } else {
     condition_litterals[1] <- paste("a",paste(c("i", "ii", "iii")[declines], collapse = "+"), sep = "")
@@ -259,7 +260,8 @@ thresholds.AOO_grid <- function(x, ecosystem_name = NA, rule = c("all", "margina
   }
   threats <- with(conditions,c(threats))
   if (!threats) {
-    message("No observed threatening process")
+
+    cli::cli_alert_danger("No observed threatening process")
     b <- FALSE
   } else {
     b <- TRUE
@@ -269,7 +271,7 @@ thresholds.AOO_grid <- function(x, ecosystem_name = NA, rule = c("all", "margina
 
   AOO_category <- cut(AOO_val,breaks=thr_AOO, labels=cats, ordered_result = TRUE)
   if (is.na(locations)) {
-    message("No threat defined locations are given")
+    cli::cli_alert_danger("No threat defined locations are given")
     c <- FALSE
   } else {
     location_category <- cut(locations,breaks=thr_locations, labels=cats, ordered_result = TRUE)
