@@ -249,21 +249,24 @@ thresholds.AOO_grid <- function(x, ecosystem_name = NA, rule = c("all", "margina
     condition_litterals[1] <- paste("a",paste(c("i", "ii", "iii")[declines], collapse = "+"), sep = "")
     a <- TRUE
     if (declines[1]) {
+      cli::cli_alert_success("Decline in measure of extent")
       rationale <- c(rationale,"Observed or inferred continuing decline in measure of extent.")
       }
     if (declines[2]) {
+      cli::cli_alert_success("Decline in measure of environmental quality")
       rationale <- c(rationale,"Observed or inferred continuing decline in measure of environmental quality.")
                      }
     if (declines[3]) {
+      cli::cli_alert_success("Decline in measure of biotic disruption")
       rationale <- c(rationale,"Observed or inferred continuing increase in measure of disruption of biotic interactions.")
       }
   }
   threats <- with(conditions,c(threats))
   if (!threats) {
-
     cli::cli_alert_danger("No observed threatening process")
     b <- FALSE
   } else {
+    cli::cli_alert_success("Observed threatening process")
     b <- TRUE
     rationale <- c(rationale,"Threatening processes.")
   }
@@ -274,6 +277,7 @@ thresholds.AOO_grid <- function(x, ecosystem_name = NA, rule = c("all", "margina
     cli::cli_alert_danger("No threat defined locations are given")
     c <- FALSE
   } else {
+    cli::cli_alert_success("Threat defined locations reported")
     location_category <- cut(locations,breaks=thr_locations, labels=cats, ordered_result = TRUE)
       c <- (location_category <= AOO_category)
       rationale <- c(rationale,sprintf("Ecosystem type present at %s threat defined locations.", locations))
@@ -328,6 +332,19 @@ thresholds.AOO_grid <- function(x, ecosystem_name = NA, rule = c("all", "margina
                 conditions = condition_litterals,
                 rationale = paste(rationale, collapse = " "),
                 note = paste(note, collapse = " "))
+  if (AOO_category %in% c("EN", "CR")) {
+    rle_style <- cli::combine_ansi_styles(cli::style_bold, cli::col_white, cli::bg_red)
+  } else if (AOO_category %in% c("VU")) {
+    rle_style <- cli::combine_ansi_styles(cli::col_black, cli::bg_br_yellow)
+  } else {
+    rle_style <- cli::combine_ansi_styles(cli::col_grey, cli::bg_white)
+  }
+  message(
+    rle_style(
+      sprintf("Category according to criterion %s: %s.",
+                    cli::style_bold("B2"),
+                    cli::style_bold(AOO_category))))
+
   return(res)
 }
 

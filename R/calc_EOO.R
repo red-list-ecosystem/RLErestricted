@@ -80,8 +80,8 @@ thresholds.EOO_convex_hull <- function(x, ecosystem_name = NA,
       ans <- dplyr::slice(ans, 1)
     } else {
       selected_type <- pull(ans, !!names_from)
-      message(sprintf("No ecosystem name has been selected. Will apply the threshold to %s.",
-                      cli::bg_blue(cli::col_white(selected_type))))
+      cli::cli_alert_warning("No ecosystem name has been selected. Will apply the threshold to first type found.")
+      message(cli::bg_blue(cli::col_white(ecosystem_name)))
     }
   } else {
     selected_type <- ecosystem_name
@@ -101,26 +101,30 @@ thresholds.EOO_convex_hull <- function(x, ecosystem_name = NA,
   condition_litterals <- c("a","b","c")
   declines <- with(conditions,c(spatial, environment, interactions))
   if (all(declines == FALSE)) {
-    message("No observed or inferred continuing decline in any measure of spatial extent or environmental quality, or increase in disruption of biotic interactions")
+    cli::cli_alert_danger("No observed or inferred continuing decline in any measure of spatial extent or environmental quality, or increase in disruption of biotic interactions")
     a <- FALSE
   } else {
     condition_litterals[1] <- paste("a",paste(c("i", "ii", "iii")[declines], collapse = "+"), sep = "")
     a <- TRUE
     if (declines[1]) {
+      cli::cli_alert_success("Decline in measure of extent")
       rationale <- c(rationale,"Observed or inferred continuing decline in measure of extent.")
     }
     if (declines[2]) {
+      cli::cli_alert_success("Decline in measure of environmental quality")
       rationale <- c(rationale,"Observed or inferred continuing decline in measure of environmental quality.")
     }
     if (declines[3]) {
+      cli::cli_alert_success("Decline in measure of biotic disruption")
       rationale <- c(rationale,"Observed or inferred continuing increase in measure of disruption of biotic interactions.")
     }
   }
   threats <- with(conditions,c(threats))
   if (!threats) {
-    message("No observed threatening process")
+    cli::cli_alert_danger("No observed threatening process")
     b <- FALSE
   } else {
+    cli::cli_alert_success("Observed threatening process")
     b <- TRUE
     rationale <- c(rationale,"Threatening processes.")
   }
@@ -128,9 +132,11 @@ thresholds.EOO_convex_hull <- function(x, ecosystem_name = NA,
 
   EOO_category <- cut(EOO_val,breaks=thr_EOO, labels=cats, ordered_result = TRUE)
   if (is.na(locations)) {
+    cli::cli_alert_danger("No threat defined locations are given")
     message("No threat defined locations are given")
     c <- FALSE
   } else {
+    cli::cli_alert_success("Threat defined locations reported")
     location_category <- cut(locations,breaks=thr_locations, labels=cats, ordered_result = TRUE)
     c <- (location_category <= EOO_category)
     rationale <- c(rationale,sprintf("Ecosystem type present at %s threat defined locations.", locations))
@@ -185,5 +191,19 @@ thresholds.EOO_convex_hull <- function(x, ecosystem_name = NA,
     conditions = condition_litterals,
     rationale = paste(rationale, collapse = " "),
     note = paste(note, collapse = " "))
+
+  if (EOO_category %in% c("EN", "CR")) {
+    rle_style <- cli::combine_ansi_styles(cli::style_bold, cli::col_white, cli::bg_red)
+  } else if (EOO_category %in% c("VU")) {
+    rle_style <- cli::combine_ansi_styles(cli::col_black, cli::bg_br_yellow)
+  } else {
+    rle_style <- cli::combine_ansi_styles(cli::col_grey, cli::bg_white)
+  }
+  message(
+    rle_style(
+      sprintf("Category according to criterion %s: %s.",
+              cli::style_bold("B2"),
+              cli::style_bold(EOO_category))))
+
   return(res)
 }
