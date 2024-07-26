@@ -2,16 +2,8 @@
 % Please edit documentation in R/calc_AOO.R
 \name{create_AOO_grid}
 \alias{create_AOO_grid}
-\title{Create an Area of Occurrence grid for multiple ecosystems}
+\title{Create an Area of Occurrence grid and include area of overlap for a single ecosystem}
 \usage{
-create_AOO_grid(
-  pols,
-  buffsize = 50000,
-  cellsize = 10000,
-  jitter = FALSE,
-  names_from = NA
-)
-
 create_AOO_grid(
   pols,
   buffsize = 50000,
@@ -33,11 +25,7 @@ create_AOO_grid(
 }
 \value{
 A simple feature of a grid over the input polygons.
-
-A simple feature of a grid over the input polygons.
 }
 \description{
-Create an Area of Occurrence grid for multiple ecosystems
-
 Create an Area of Occurrence grid and include area of overlap for a single ecosystem
 }

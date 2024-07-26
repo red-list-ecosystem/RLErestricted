@@ -9,7 +9,7 @@
 #' @import dplyr
 #' @export
 #'
-create_AOO_grid <- function(pols, cellsize = 10000, names_from = NA) {
+create_AOO_simple_grid <- function(pols, cellsize = 10000, names_from = NA) {
 
   names_from <- coalesce(names_from, "ecosystem_name")
   if (any(colnames(pols) %in% names_from)) {
@@ -19,7 +19,7 @@ create_AOO_grid <- function(pols, cellsize = 10000, names_from = NA) {
   }
 
   if (n_distinct(ecosystem_names) == 1) {
-    if (!any(st_geometry_type(x) %in% c("POINT", "LINESTRING"))) {
+    if (!any(st_geometry_type(pols) %in% c("POINT", "LINESTRING"))) {
       message("Only one ecosystem name given, consider using `create_AOO_grid` to get more detailed summary.")
     }
   }
@@ -57,7 +57,8 @@ create_AOO_grid <- function(pols, cellsize = 10000, names_from = NA) {
 #' @import dplyr
 #' @export
 #'
-create_AOO_grid <- function(pols, buffsize = 50000, cellsize = 10000, jitter = FALSE, names_from = NA) {
+create_AOO_grid <- function(pols, buffsize = 50000, cellsize = 10000,
+                            jitter = FALSE, names_from = NA) {
 
   names_from <- coalesce(names_from, "ecosystem_name")
   if (any(colnames(pols) %in% names_from)) {
